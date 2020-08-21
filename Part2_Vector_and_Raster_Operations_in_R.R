@@ -1,10 +1,13 @@
 
 # ---- VECTOR OPERATIONS ----
 
+# ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
+
 #In this example, we will create buffers of 50 m around a series of camera traps in 
 #Honduras, and then clip those buffers to Honduras land area
 
 library(sf)
+library(ggplot2)
 
 #read in the shapefile with st_read
 PAs <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Protected_Areas_2007.shp")
@@ -48,12 +51,25 @@ NationalParks <- PAs %>%
 #how many PAs are NPs?
 nrow(NationalParks)
 
-#what if there is a numerical condition?
-PAs$HECTARES
+#what if there is a numerical condition? such as, what PAs are >2000 km2?
+#for this we need to calculate geometry
+#let's do area first
+PAs$area_m2 <- st_area(PAs)
+#these are really big numbers though. to make it km2, try
+library(units)
+PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 
+#you can do the same for perimeter using st_perimeter!
+
+#if we want to save this super-cool geometry, we can do
+st_write(PAs, "test.csv")
+
+#now, the question is: how do we subset to only those PAs that are >500 km2?
+
+library(dplyr)
 BigPAs <- PAs %>% 
-  filter(HECTARES > 50000)
-#how many PAs are greater than 5000 ha in area?
+  filter(area_km2 > 500)
+#how many PAs are greater than 500 km2 in area?
 nrow(BigPAs)
 
 #We can also adjust our colors to give each PA a different color
@@ -77,6 +93,11 @@ ggplot() +
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
 #read in the shapefile with st_read
 honduras_roads <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Roads_1999_CCAD.shp")
+
+#first, let's use st_perimeter() to see how long these roads are
+honduras_roads$length <- st_length(honduras_roads)
+head(honduras_roads)
+
 #let's see what happens if we try to intersect them
 PAs_road_isect <- PAs[honduras_roads,]
 
@@ -89,3 +110,46 @@ ggplot() +
   geom_sf(data = PAs_road_isect, colour= "darkgreen",size = 1.5) +
   geom_sf(data = honduras_roads_UTM, lwd = 1) +
   ggtitle("PAs that intersect roads in Honduras", subtitle = "Subtitle option if you want it!")
+
+#let's do one last thing with these PAs - create centroids and save them as .csv
+
+PA_centroids <- st_centroid(PAs)
+#this creates a whole new geometry type (points)
+
+#let's see what this looks like
+ggplot() + 
+  geom_sf(data = PAs, colour="darkgreen",fill="lightgreen", size = 1) +
+  geom_sf(data = honduras, fill=NA, size = 1) +
+  geom_sf(data=centroids, colour="yellow", size=2)+
+  ggtitle("Centroids of PAs in Honduras")
+
+#and then save the centroid coordinates as .csv
+st_write(PA_centroids, "test2.csv", layer_options = "GEOMETRY=AS_XY")
+
+# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ----
+
+#let's import the csv of camera trap locations like any other .csv
+
+camlocs <- read.csv("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Camera_Coordinates_JeannetteKawas.csv")
+
+#let's see what's in this table
+head(camlocs)
+
+#we know from our field staff that the coordinate system is WGS 1984 UTM Zone 16N
+#this corresponds to EPSG number 32616 on spatialreference.org
+
+#let's transfer to an sf object and assign a coordinate system
+camlocs_sf <- st_as_sf(camlocs, coords = 
+                                     c("x", "y"), crs = 32616)
+
+#let's make sure the coordinate system is right
+st_crs(camlocs_sf)
+
+#let's plot the locations to see where they are in honduras
+ggplot() +
+  geom_sf(data = camlocs_sf) +
+  ggtitle("Map of Camera Trap Locations")
+
+#now let's save this to a .shp if we want to use it in ArcMap
+st_write(camlocs_sf,
+         "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.shp", driver = "ESRI Shapefile")

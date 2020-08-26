@@ -8,7 +8,8 @@
 
 library(sf)
 library(ggplot2)
-
+library(dplyr)
+library(raster)
 #read in the shapefile with st_read
 PAs <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
@@ -153,3 +154,62 @@ ggplot() +
 #now let's save this to a .shp if we want to use it in ArcMap
 st_write(camlocs_sf,
          "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.shp", driver = "ESRI Shapefile")
+
+#let's first get a distance matrix between points
+head(camlocs_sf)
+dist_matrix <- st_distance(camlocs_sf, camlocs_sf)
+
+
+#then let's create a buffer of 500 m around the camera trap locations
+cam_500m_buffer <- st_buffer(camlocs_sf, dist = 500)
+
+#did it work? let's see by making a map
+#ensure that you plot buffers first so that the points can go over them
+ggplot() +
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  ggtitle("Map of Camera Trap Locations")
+
+test <- st_union(camlocs_sf)
+#experimenting w mcp (convex hull?)
+library
+cam_convexhull <- st_convex_hull(st_union(camlocs_sf)) 
+ggplot() +
+  geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  ggtitle("Map of Camera Trap Locations")
+
+#pop quiz: how would we then get area of that convex hull polygon?
+area <- st_area(cam_convexhull) 
+
+#ok so let's see how this looks when we want to display this polygon over the border of Honduras
+#let's read in a more detailed version of Honduras boundary
+Honduras <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Border.shp")
+
+ggplot() +
+  geom_sf(data = Honduras) +
+  geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  ggtitle("Map of Camera Trap Locations")
+
+#i am not happy with this map extent. how can we change it?
+
+extent <- st_bbox(cam_convexhull)
+ggplot() +
+  geom_sf(data = Honduras) +
+  geom_sf(data=cam_convexhull, fill=NA, color = "blue", size=2)+
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  coord_sf(crs=32616, xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
+  ggtitle("Map of Camera Trap Locations")
+
+#if we want a map with meters rather than lat/long, add datum=st_crs(xxxx) argument
+ggplot() +
+  geom_sf(data = Honduras) +
+  geom_sf(data=cam_convexhull, fill=NA, color = "blue", size=2)+
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  coord_sf(datum=st_crs(32616), xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
+  ggtitle("Map of Camera Trap Locations")

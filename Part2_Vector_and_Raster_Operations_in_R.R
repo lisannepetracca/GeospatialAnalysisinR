@@ -63,7 +63,7 @@ PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 #you can do the same for perimeter using st_perimeter!
 
 #if we want to save this super-cool geometry, we can do
-st_write(PAs, "test.csv")
+st_write(PAs, "test.csv") #geometry as xy?
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
 
@@ -213,3 +213,120 @@ ggplot() +
   geom_sf(data = camlocs_sf) +
   coord_sf(datum=st_crs(32616), xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
   ggtitle("Map of Camera Trap Locations")
+
+#oh no! the convex hull polygon includes the ocean! how can we crop to the Honduras boundary?
+
+#first, let's check the Honduras polygon to see what coordinate system is is using
+st_crs(Honduras)
+
+#ok, it is NAD 1927 UTM Zone 16N; this is very close to WGS 1984 UTM Zone 16N but isn't exact
+#let's transform the boundary to the same projection as the convex hull polygon
+
+honduras_UTM <- st_transform(Honduras, crs =32616)
+
+#let's check to make sure the new polygon is in the correct projection
+st_crs(honduras_UTM)
+
+#yay! it worked! now we can proceed with cropping
+cam_convexhull_land <- st_intersection(cam_convexhull, honduras_UTM)
+plot(cam_convexhull_land)
+ggplot() +
+  geom_sf(data = honduras_UTM) +
+  geom_sf(data=cam_convexhull_land, fill=NA, color = "blue", size=2)+
+  geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
+  geom_sf(data = camlocs_sf) +
+  coord_sf(crs=32616, xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
+  ggtitle("Map of Camera Trap Locations")
+
+#how can we get the area (in square meters) of this new polygon?
+st_area(cam_convexhull_land)
+
+#moving ahead to SAMPLING
+
+#let's select the PA in Honduras called "Pico Bonito - Zona Nucleo"
+PAs$NOMBRE
+
+#first we will use dplyr package to select the PA by name from the greater multipolygon object
+PicoBonito <- PAs %>% 
+  filter(NOMBRE == "Pico Bonito-Zona Nucleo")
+
+#let's create 100 random points within the PA for vegetation sampling
+random_points <- st_sample (PicoBonito, 100, type="random", exact=T)
+
+#what does this look like?
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
+  geom_sf(data=random_points, color = "black", size=2)+
+  labs(title=expression(paste("100 Random Points in Pico Bonito NP")))
+
+#let's try again with 100 regular points
+regular_points <- st_sample (PicoBonito, 100, type="regular", exact=T)
+
+#what does this look like?
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
+  geom_sf(data=regular_points, color = "black", size=2)+
+  labs(title=expression(paste("100 Regular Points in Pico Bonito NP")))
+
+#then we will create a 16 km2 grid (4 km x 4 km) over the PA
+pico_16km2_grid <- st_make_grid(
+  PicoBonito,
+  cellsize = 4000,
+  crs = 32616,
+  what = "polygons",
+  square = TRUE
+)
+
+#how can we see what this looks like?
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen",size=1.5) +
+  geom_sf(data=pico_16km2_grid, fill=NA, color = "black", size=2)+
+  labs(title=expression(paste("16 km" ^{2}," Grid in Pico Bonito NP")))
+
+#what if we wanted to do hexagons instead?
+pico_16km2_grid_hex <- st_make_grid(
+  PicoBonito,
+  cellsize = 4000,
+  crs = 32616,
+  what = "polygons",
+  square = FALSE,
+  flat_topped = TRUE
+)
+
+#how can we see what this looks like?
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
+  geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
+  labs(title=expression(paste("16 km" ^{2}," Hexagon Grid in Pico Bonito NP")))
+
+#I like the way the hexagon grid looks. What if we want to put in two camera traps at 
+#random locations within each hexagon?
+
+random_points <- st_sample (pico_16km2_grid_hex, size=2, type="random", exact=T)
+
+#what does it look like?
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
+  geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
+  geom_sf(data=random_points, color = "black", size=2)+
+  labs(title=expression(paste("16 km" ^{2}," Hexagon Grid in Pico Bonito NP")))
+
+#oh no. what happened? we only have two points for the whole entire grid
+#we need to explicitly tell st_sample to sample within each of the 63 hexagons within the grid
+
+#let's see how many grids we have; yep, there are 63
+pico_16km2_grid_hex
+
+#let's try again, supplying a vector such that it knows to sample 2 points
+#in each of the 63 polygons 
+random_points <- st_sample (pico_16km2_grid_hex, size=rep(2,63), type="random", exact=T)
+
+ggplot() +
+  geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
+  geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
+  geom_sf(data=random_points, color = "purple", size=2)+
+  labs(title=expression(paste("Two Random Pts Per Hexagon Cell in Pico Bonito NP")))
+
+
+#let's save these points to a .csv
+st_write(random_points, "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.csv", layer_options = "GEOMETRY=AS_XY")

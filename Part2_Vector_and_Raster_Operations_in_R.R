@@ -38,6 +38,11 @@ ggplot() +
   geom_sf(data = PAs, size = 1, color = "black", fill = "darkgreen") + 
   ggtitle("PAs in Honduras")
 
+#alternatively
+plot(PAs)
+
+#NOTE add labels for "nombre" panel
+
 #let's explore the different names of PAs in Honduras
 names(PAs)
 PAs$NOMBRE
@@ -330,3 +335,95 @@ ggplot() +
 
 #let's save these points to a .csv
 st_write(random_points, "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.csv", layer_options = "GEOMETRY=AS_XY")
+
+
+####---- RASTER TOOLS IN R ----####
+
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(raster)
+
+#first, let's read in our shapefile of Hwange NP
+Hwange <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/Hwange_NP.shp")
+plot(Hwange[c("NAME")])
+#or
+plot(Hwange[1])
+
+#create random points
+#let's create 100 random points within the PA for vegetation sampling
+Hwange_pts <- st_sample(Hwange, 1000, type="random", exact=T)
+
+#what does this look like?
+ggplot() +
+  geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
+  geom_sf(data=Hwange_pts, color = "black", size=2)+
+  labs(title=expression(paste("1000 Random Points in Hwange NP")))
+
+#now let's bring in our waterholes and roads (again using package sf)
+
+roads <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/ZWE_roads.shp")
+waterholes <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/waterholes.shp")
+
+ggplot() +
+  geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
+  geom_sf(data=roads, color = "black", size=1)+
+  geom_sf(data=waterholes, color= "blue", size=3)+
+  labs(title=expression(paste("Roads and Waterholes in Hwange NP")))
+
+#man, this map looks terrible. how can we change the extent?
+
+#first, let's get the bounding box for the park
+park_extent <- st_bbox(Hwange)
+
+#now we can add this to our map using coord_sf
+#here, our coordinate system is WGS 1984 UTM Zone 35S (EPSG 32735)
+ggplot() +
+  geom_sf(data = Hwange, color = "green", fill = "white", size=2) +
+  geom_sf(data=roads, color = "black", size=1)+
+  geom_sf(data=waterholes, color= "blue", size=3)+
+  labs(title=expression(paste("Roads and Waterholes in Hwange NP")))+
+  coord_sf(crs=32735, xlim=c(park_extent[[1]], park_extent[[3]]), ylim=c(park_extent[[2]], park_extent[[4]]))
+
+#that's better!
+
+#checking the coordinate systems reveals our "roads" layer is WGS 1984. How can we convert to WGS 1984 UTM Zone 35S?
+roads_UTM <- st_transform(roads, crs = 32735)
+
+
+
+#now let's read in the elevation (it's an aster image of 15 m resolution)
+elev <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif") 
+
+#plotting a raster of this size is kinda slow and i don't love it, but it works
+plot(elev)
+
+#what is the coordinate system? 
+crs(elev)
+
+#let's use package velox to make raster processing a bit faster
+library(velox)
+#let's crop to hwange extent to make things go faster off the bat
+cropext <- c(25.5,27.5,-20,-18.4)
+elev_vx <- velox(elev)
+elev_vx$crop(cropext)
+elev_extent <- elev_vx$as.RasterLayer(band=1)
+
+plot(elev_extent)
+
+#let's project using projectRaster
+#annoyingly, package raster doesn't use the numeric EPSG format like package sf does, so we need to use the proj.4 format
+#this is also easily found on spatialreference.org
+
+elev_extent_UTM <- projectRaster(elev_extent, res=60, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+plot(elev_extent_UTM)
+plot(Hwange[1], border="black",col=NA, size=2,add=T)
+
+
+plot(elev_extent)
+plot(Hwange, add=T)
+elev_map <- fortify(elev_extent_UTM)
+ggplot() +  
+  geom_tile(data=elev, aes(x=x, y=y, fill=value), alpha=0.8) + 
+  geom_sf(data=Hwange, fill=NA, color="grey50", size=0.25) 
+

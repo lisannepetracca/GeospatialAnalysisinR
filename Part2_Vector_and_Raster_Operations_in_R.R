@@ -344,6 +344,7 @@ library(ggplot2)
 library(dplyr)
 library(raster)
 
+setwd("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe")
 #first, let's read in our shapefile of Hwange NP
 Hwange <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/Hwange_NP.shp")
 plot(Hwange[c("NAME")])
@@ -391,7 +392,6 @@ ggplot() +
 roads_UTM <- st_transform(roads, crs = 32735)
 
 
-
 #now let's read in the elevation (it's an aster image of 15 m resolution)
 elev <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif") 
 
@@ -403,27 +403,111 @@ crs(elev)
 
 #let's use package velox to make raster processing a bit faster
 library(velox)
-#let's crop to hwange extent to make things go faster off the bat
-cropext <- c(25.5,27.5,-20,-18.4)
+
+#let's add Hwange to the elevation tile (needs to be converted to WGS84 first)
+Hwange_WGS <- st_transform(Hwange, crs=4326)
+plot(Hwange_WGS, add=T)
+
+#ok, so there is a lot of extra raster that we don't want to work with
+#let's crop to hwange extent to make things like reprojecting go faster
+#let's proceed with the extent for Hwange_WGS 
+extent(Hwange_WGS)
+#this line creates an object from the four numbers within the extent of Hwange_WGS
+cropext <- c(extent(Hwange_WGS)[1:4]) 
 elev_vx <- velox(elev)
 elev_vx$crop(cropext)
-elev_extent <- elev_vx$as.RasterLayer(band=1)
+elev_crop <- elev_vx$as.RasterLayer(band=1)
 
-plot(elev_extent)
+#let's see what it looks like now!
+plot(elev_crop)
+plot(Hwange_WGS, border="black",col=NA,lwd=2,add=T)
 
+#what's the coordinate system of the elevation raster again?
+crs(elev_crop)
+
+#oh man, this doesn't match the other layers (which are in WGS 1984 UTM Zone 10N)
 #let's project using projectRaster
 #annoyingly, package raster doesn't use the numeric EPSG format like package sf does, so we need to use the proj.4 format
 #this is also easily found on spatialreference.org
 
-elev_extent_UTM <- projectRaster(elev_extent, res=60, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
-plot(elev_extent_UTM)
-plot(Hwange[1], border="black",col=NA, size=2,add=T)
+#goes really fast! this resolution will match our resolution for percent veg cover
+elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+#let's make sure it looks ok with our Hwange shapefile in UTM coordinates
+plot(elev_crop_UTM)
+plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
+#ok, we are good!
 
+#now let's read in our MODIS data
+#we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
+#the data are provided to you as an hdf4 file
 
-plot(elev_extent)
-plot(Hwange, add=T)
-elev_map <- fortify(elev_extent_UTM)
-ggplot() +  
-  geom_tile(data=elev, aes(x=x, y=y, fill=value), alpha=0.8) + 
-  geom_sf(data=Hwange, fill=NA, color="grey50", size=0.25) 
+###### IMPORTANT ######
+#For those of you working with MODIS data, and remote sensing data in general, it is wise to 
+#install GDAL for batch tasks, particularly with odd file extensions such as hdf4 (a common
+#file format used by NASA, and in my experience with MODIS data)
+
+#We will not be running GDAL in this workshop, but the below lines will work to successfully import
+#an .hdf4 file after downloading GDAL (with hdf4 support) through this link:
+#https://trac.osgeo.org/osgeo4w/
+
+library(gdalUtils)
+
+#creates a list of the subdatasets within the hdf4 MODIS files 
+subdata <- get_subdatasets("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/MOD44B.A2016065.h20v10.006.2017081121817.hdf")
+
+#ok, let's see what those subdatasets are
+subdata
+subdata[1]
+
+#i am only interested in percent tree cover, which is the first subdataset
+#now let's use GDAL to convert to a tif!
+#this is the .tif that we will use in the workshop
+
+gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
+
+#now let's read in this .tif as a raster
+
+percveg <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/PercVegCover_2016.tif")
+
+#it doesn't read in the coordinate system, which is annoying
+#i know google uses a sinusoidal projection that can be found here:
+#https://spatialreference.org/ref/sr-org/modis-sinusoidal/
+crs(percveg) <- "+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181 +units=m +no_defs "
+
+plot(percveg)
+
+#let's set all values >100 to NA
+percveg[percveg > 100] <- NA
+plot(percveg)
+
+#ok so now we have to reproject to WGS 1984 UTM Zone 35S, like the other layers
+#no use cropping here because the resolution is coarser (250 m)
+
+#takes <1 minute
+percveg_UTM_S <- projectRaster(percveg, res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+
+#let's see what it looks like with Hwange NP
+plot(percveg_UTM_S)
+plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
+
+#let's crop so it looks nice
+cropext <- c(extent(Hwange)[1:4]) 
+veg_vx <- velox(percveg_UTM_S)
+veg_vx$crop(cropext)
+veg_crop <- veg_vx$as.RasterLayer(band=1)
+
+#let's see what it looks like now!
+plot(veg_crop)
+plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
+
+#make raster stack
+library(gdata)
+elev <- resample(elev_crop_UTM, veg_crop)
+stack <- stack(veg_crop, elev)
+
+#RECLASSIFY (use perc veg)
+# all values > 0 and <= 0.25 become 1, etc.
+m <- c(0:100, 0:100,  0.25, 0.5, 2,  0.5, 1, 3)
+rclmat <- matrix(m, ncol=3, byrow=TRUE)
+rc <- reclassify(r, rclmat)
 

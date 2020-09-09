@@ -404,28 +404,32 @@ crs(elev)
 #let's use package velox to make raster processing a bit faster
 library(velox)
 
-#let's add Hwange to the elevation tile (needs to be converted to WGS84 first)
+#let's add Hwange to the elevation tile (Hwange border needs to be converted to WGS84 first)
 Hwange_WGS <- st_transform(Hwange, crs=4326)
-plot(Hwange_WGS, add=T)
+plot(Hwange_WGS[1], add=T)
 
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's crop to hwange extent to make things like reprojecting go faster
 #let's proceed with the extent for Hwange_WGS 
 extent(Hwange_WGS)
 #this line creates an object from the four numbers within the extent of Hwange_WGS
-cropext <- c(extent(Hwange_WGS)[1:4]) 
+cropext <- c(extent(Hwange_WGS)[1:4])
+
+#this makes elev a VeloxRaster object
 elev_vx <- velox(elev)
+#performs crop
 elev_vx$crop(cropext)
+#converting VeloxRaster object to Raster object
 elev_crop <- elev_vx$as.RasterLayer(band=1)
 
 #let's see what it looks like now!
 plot(elev_crop)
-plot(Hwange_WGS, border="black",col=NA,lwd=2,add=T)
+plot(Hwange_WGS[1], border="black",col=NA,lwd=2,add=T)
 
 #what's the coordinate system of the elevation raster again?
 crs(elev_crop)
 
-#oh man, this doesn't match the other layers (which are in WGS 1984 UTM Zone 10N)
+#oh man, this crs (WGS 1984) doesn't match the other layers (which are in WGS 1984 UTM Zone 10N)
 #let's project using projectRaster
 #annoyingly, package raster doesn't use the numeric EPSG format like package sf does, so we need to use the proj.4 format
 #this is also easily found on spatialreference.org
@@ -439,7 +443,7 @@ plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
-#the data are provided to you as an hdf4 file
+#the data were originally provided to us as an hdf4 file
 
 ###### IMPORTANT ######
 #For those of you working with MODIS data, and remote sensing data in general, it is wise to 
@@ -464,15 +468,17 @@ subdata[1]
 #this is the .tif that we will use in the workshop
 
 gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
+###### END OF GDAL SECTION THAT IS NOT PART OF WORKSHOP ######
 
-#now let's read in this .tif as a raster
+
+#BACK TO THE WORKSHOP NOW!
+#let's read in this .tif as a raster
 
 percveg <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/PercVegCover_2016.tif")
-
-#it doesn't read in the coordinate system, which is annoying
-#i know google uses a sinusoidal projection that can be found here:
+crs(percveg)
+#it gives an error ab the coordinate system but this crs is correct
+#modis uses a sinusoidal coordinate system that can be found here:
 #https://spatialreference.org/ref/sr-org/modis-sinusoidal/
-crs(percveg) <- "+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181 +units=m +no_defs "
 
 plot(percveg)
 
@@ -500,14 +506,71 @@ veg_crop <- veg_vx$as.RasterLayer(band=1)
 plot(veg_crop)
 plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 
-#make raster stack
-library(gdata)
-elev <- resample(elev_crop_UTM, veg_crop)
+#let's try to make a raster stack of vegetation and elevation
+stack <- stack(veg_crop, elev_crop_UTM)
+#let's check out the extents of each
+
+extent(veg_crop)
+extent(elev_crop_UTM)
+
+#let's try realigning extents
+elev <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 stack <- stack(veg_crop, elev)
 
-#RECLASSIFY (use perc veg)
-# all values > 0 and <= 0.25 become 1, etc.
-m <- c(0:100, 0:100,  0.25, 0.5, 2,  0.5, 1, 3)
-rclmat <- matrix(m, ncol=3, byrow=TRUE)
-rc <- reclassify(r, rclmat)
+#let's say that we'd like to have five categories of percent land cover rather than continuous values
+#for example, 0-10 = 1, 10-20 = 2, 20-30 = 3, 30-40 = 4, 40-50 = 5
+#in this case, we need to build a reclassification matrix and then use the reclassify function
 
+#let's set up those reclassification values
+reclass_vals <- c(0,  10, 1, 
+                10, 20, 2,
+                20, 30, 3,
+                30, 40, 4,
+                40, 50, 5)
+#now let's make it a matrix with a certain number of columns, and that we are filling by row
+reclass_mat <- matrix(reclass_vals, ncol=3, byrow=TRUE)
+#now let's reclassify those values!
+veg_reclass <- reclassify(veg_crop, reclass_mat)
+
+#let's see what it looks like now!
+plot(veg_reclass)
+plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
+
+#let's move on to getting distances from roads and waterholes
+
+#first, let's clip roads to hwange extent
+roads_hwange <- st_intersection(roads_UTM, Hwange)
+plot(roads_hwange)
+
+#for linear features (roads), let's use rgeos and gDistance function
+require(rgeos)
+require(sp)
+require(raster)
+#create empty raster such that we can *eventually* store our distances there
+dist_road <-  raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+#need to make roads a spatial object in package sp
+roads_sp <- as(roads_hwange,"Spatial")
+#let's see what they look like
+plot(roads_sp)
+#now we'll use gDistance to calculate the distance between the given geometries
+#takes ~ 1 min
+distroad_matrix <- gDistance(as(dist_road,"SpatialPoints"), roads_sp,  byid=T)
+#with these dimensions, we can see that each raster cell has a distance value to each of the road features
+dim(distroad_matrix) 
+#but we *really* only want the minimum distance from each raster cell to the nearest road
+#so we will take the minimum across columns
+distroad_min <-  apply(distroad_matrix,2,min)
+#now we give the empty distance to road matrix these values
+dist_road[] <- distroad_min
+#we're done! let's plot the output
+plot(dist_road)
+plot(roads_hwange[1], col="black",lwd=2,add=T)
+
+#now let's do it for points in package raster
+s <- raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+dist_waterhole <- distanceFromPoints(s, st_coordinates(waterholes))
+plot(dist_waterhole)
+plot(waterholes[1], col="black",lwd=2,add=T)
+
+#make raster stack
+stack <- stack(veg_crop, elev, dist_road, dist_waterhole )

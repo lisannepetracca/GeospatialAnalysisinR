@@ -540,12 +540,11 @@ plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 
 #first, let's clip roads to hwange extent
 roads_hwange <- st_intersection(roads_UTM, Hwange)
-plot(roads_hwange)
+plot(roads_hwange[1])
 
 #for linear features (roads), let's use rgeos and gDistance function
 require(rgeos)
-require(sp)
-require(raster)
+
 #create empty raster such that we can *eventually* store our distances there
 dist_road <-  raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 #need to make roads a spatial object in package sp
@@ -555,22 +554,69 @@ plot(roads_sp)
 #now we'll use gDistance to calculate the distance between the given geometries
 #takes ~ 1 min
 distroad_matrix <- gDistance(as(dist_road,"SpatialPoints"), roads_sp,  byid=T)
-#with these dimensions, we can see that each raster cell has a distance value to each of the road features
+#that warning message is really weird because they have the same proj4 strings--- so just ignore
+#with these dimensions, we can see that each raster cell has a distance value to each of the 107 road features
+#each row is a road, and each column is a distance to each of the 432165 raster cells
 dim(distroad_matrix) 
 #but we *really* only want the minimum distance from each raster cell to the nearest road
 #so we will take the minimum across columns
 distroad_min <-  apply(distroad_matrix,2,min)
-#now we give the empty distance to road matrix these values
+#now we give these distances to the empty road matrix (woof! we're nearly done!)
 dist_road[] <- distroad_min
 #we're done! let's plot the output
 plot(dist_road)
 plot(roads_hwange[1], col="black",lwd=2,add=T)
 
 #now let's do it for points in package raster
+#creating another empty raster
 s <- raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+#calculating distance from points (waterholes)
 dist_waterhole <- distanceFromPoints(s, st_coordinates(waterholes))
+#plotting the output
 plot(dist_waterhole)
 plot(waterholes[1], col="black",lwd=2,add=T)
 
-#make raster stack
+#quick foray into neighborhood statistics
+#let's take the mean elevation using a neighborhood of 15 x 15 cells 
+#we are using 9 cells here to show how the values are "smoothed out" visually
+elev_focal <- focal(elev, w=matrix(1,15,15), fun=mean)
+#let's see the original
+plot(elev)
+#and now let's see the smoothed out version
+plot(elev_focal)
+
+#now we are able to make a raster stack of all four rasters! 
 stack <- stack(veg_crop, elev, dist_road, dist_waterhole )
+#what does the stack look like?
+stack
+#names are ambiguous. let's assign names
+names(stack) <- c("perc_veg", "elev", "dist_road", "dist_waterhole")
+stack
+
+#cool. now we will use the "extract" tool to extract values for each of our 1000 random points
+#from each of our four raster layers
+
+#first, we need to convert to a Spatial* object (a "SpatialPoints" class for package sp)
+Hwange_pts_sp <- as(Hwange_pts,"Spatial")
+
+#then we extract values -- this step goes *so* super fast
+#there are a number of arguments that one can make w this function; we are keeping it simple
+#df=T just means we are returning the output as a data frame
+values <- extract(stack, Hwange_pts_sp, df=T)
+#let's write this to .csv!
+write.csv(values, "extracted_raster_values.csv")
+
+#how can we save a single raster layer?
+writeRaster(elev, "elevation.tif")
+
+#how can we save a raster stack?
+writeRaster(stack, "raster_stack.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
+#THEN, in order to re-import the stack and use the individual raster layers, you can use
+stack_import<- stack("raster_stack.tif")
+elev <- subset(stack_import,subset=2)
+plot(elev)
+
+#please see links in slides for how to do "other" tasks that we don't have enough time to cover
+#(1) merging rasters together
+#(2) calculating proportion of discrete land cover types within polygons (can be grids or
+#buffers around points)

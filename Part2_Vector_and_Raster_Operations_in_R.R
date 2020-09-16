@@ -109,6 +109,7 @@ PAs_road_isect <- PAs[honduras_roads,]
 
 #oh man! coordinate systems aren't the same. we need to project the roads to the same coord system
 honduras_roads_UTM <- st_transform(honduras_roads, crs = "+proj=utm +zone=16 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+#alternatively, we could have used "crs = crs(PAs)" to import the CRS from "PAs"
 PAs_road_isect <- PAs[honduras_roads_UTM,]
 
 #let's see what we get
@@ -392,10 +393,28 @@ ggplot() +
 roads_UTM <- st_transform(roads, crs = 32735)
 
 
-#now let's read in the elevation (it's an aster image of 15 m resolution)
+#now, before reading in the elevation data, let's check it out first
+library(rgdal)
+GDALinfo("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif")
+
+#now let's read in the elevation (it's an aster image)
 elev <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif") 
 
-#plotting a raster of this size is kinda slow and i don't love it, but it works
+#how can we get an overview of the imported raster?
+elev
+
+#this is great, but doesn't provide much beyond min/max
+#how can we get, say, quartiles of the data?
+#turns out it's the same for any vector or data frame column in R
+summary(elev)
+
+#if you want it to use ALL the values in the dataset, use
+summary(elev, maxsamp = ncell(elev))
+#not much of a difference, eh? may notice larger changes w bigger rasters
+
+
+
+#here is a fast, simple means of plotting a raster
 plot(elev)
 
 #what is the coordinate system? 
@@ -440,6 +459,70 @@ elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+proj=utm +zone=35 +sout
 plot(elev_crop_UTM)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 #ok, we are good!
+
+#what if we wanted to plot in ggplot?
+#it's slightly more annoying bc we have to convert the raster to a data frame first
+
+elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
+#now we can plot as we did for the vector data, but take note of "geom_raster" argument
+ggplot() +
+  geom_raster(data = elev_df , aes(x = x, y = y, fill = aster_image_20160624)) +
+  scale_fill_viridis_c() +
+  geom_sf(data = Hwange[1], fill=NA, color="black", size = 1) +
+  coord_sf()
+
+#what if we wanted to plot elevation in four classes?
+#on the one hand, we can have dplyr determine those breaks 
+#give the column name of the raster values to cut()
+#note that we have four breaks for four classes
+
+elev_df_fourgroups <- elev_df %>%
+  mutate(elev_brk = cut(aster_image_20160624, breaks = 4))
+
+#you can then see how many pixels fall into each group
+elev_df_fourgroups %>%
+  group_by(elev_brk) %>%
+  count()
+
+#man, we have NA values. where are they? 
+ggplot() +
+  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = aster_image_20160624)) +
+  scale_fill_viridis_c(na.value = 'red') 
+#ok, they are some border cells
+#can use trim() argument in raster package to get rid of these cells, but we're ok for now
+#trim gets rid of NAs in the outer rows and columns 
+
+#now let's plot these four classes
+#coord_quickmap() does a Mercator coordinate output and is appropriate for smaller study areas
+ggplot() +
+  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_brk)) +
+  coord_quickmap()
+
+#what if we want these breaks to be manual?
+breaks <- c(800, 900, 1000, 1100, 1200)
+
+elev_df_manualbrk <- elev_df %>%
+  mutate(elev_brk_manual = cut(aster_image_20160624, breaks = breaks))
+
+#how many pixels fall into each group?
+#you can then see how many pixels fall into each group
+elev_df_manualbrk %>%
+  group_by(elev_brk_manual) %>%
+  count()
+
+#now let's plot these four classes
+#coord_quickmap() does a Mercator coordinate output and is appropriate for smaller study areas
+ggplot() +
+  geom_raster(data = elev_df_manualbrk , aes(x = x, y = y, fill = elev_brk_manual)) +
+  coord_quickmap()
+
+#one final thing. what if we wanted to visualize the spread of data within that raster?
+#can help you determine if you had incorrect values
+#values outside of an expected range can be considered suspect
+#we can make a histogram within ggplot
+head(elev_df)
+ggplot() +
+  geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
@@ -607,7 +690,8 @@ values <- extract(stack, Hwange_pts_sp, df=T)
 write.csv(values, "extracted_raster_values.csv")
 
 #how can we save a single raster layer?
-writeRaster(elev, "elevation.tif")
+#set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
+writeRaster(elev, "elevation.tif", format="GTiff", overwrite=T, NAflag=-9999)
 
 #how can we save a raster stack?
 writeRaster(stack, "raster_stack.tif", options="INTERLEAVE=BAND", overwrite=TRUE)

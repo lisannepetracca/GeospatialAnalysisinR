@@ -44,12 +44,14 @@ plot(PAs)
 #NOTE add labels for "nombre" panel
 
 #let's explore the different names of PAs in Honduras
+#this is basically like exploring the values within a certain column
 names(PAs)
 PAs$NOMBRE
 
 #let's say we want to extract only those PAs that are National Parks (Parque Nacional)
 library(dplyr)
-PAs$CATEGORIA
+#to see unique levels within a certain column, we can use "levels" argument
+levels(PAs$CATEGORIA)
 
 NationalParks <- PAs %>% 
   filter(CATEGORIA == "Parque Nacional")
@@ -113,6 +115,8 @@ honduras_roads_UTM <- st_transform(honduras_roads, crs = "+proj=utm +zone=16 +el
 PAs_road_isect <- PAs[honduras_roads_UTM,]
 
 #let's see what we get
+#while the new projection was necessary for the intersection, ggplot2 does not require vector data to be in the 
+#same projection; ggplot automatically converts all objects to the same CRS before plotting
 ggplot() + 
   geom_sf(data = PAs_road_isect, colour= "darkgreen",size = 1.5) +
   geom_sf(data = honduras_roads_UTM, lwd = 1) +
@@ -412,7 +416,10 @@ summary(elev)
 summary(elev, maxsamp = ncell(elev))
 #not much of a difference, eh? may notice larger changes w bigger rasters
 
-
+#what if we want the mean of the whole raster?
+#cellStats can also be used on a raster stack (something we will cover later)
+#in that case, will produce a vector where each value is associated with a raster from the stack
+mean <- cellStats(elev, mean)
 
 #here is a fast, simple means of plotting a raster
 plot(elev)
@@ -471,6 +478,13 @@ ggplot() +
   geom_sf(data = Hwange[1], fill=NA, color="black", size = 1) +
   coord_sf()
 
+#and a spread of data values?
+#we can make a histogram within ggplot too
+#can help you determine if you have wonky values
+#values outside of an expected range can be considered suspect
+ggplot() +
+  geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
+
 #what if we wanted to plot elevation in four classes?
 #on the one hand, we can have dplyr determine those breaks 
 #give the column name of the raster values to cut()
@@ -516,13 +530,7 @@ ggplot() +
   geom_raster(data = elev_df_manualbrk , aes(x = x, y = y, fill = elev_brk_manual)) +
   coord_quickmap()
 
-#one final thing. what if we wanted to visualize the spread of data within that raster?
-#can help you determine if you had incorrect values
-#values outside of an expected range can be considered suspect
-#we can make a histogram within ggplot
-head(elev_df)
-ggplot() +
-  geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
+
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
@@ -684,7 +692,10 @@ Hwange_pts_sp <- as(Hwange_pts,"Spatial")
 
 #then we extract values -- this step goes *so* super fast
 #there are a number of arguments that one can make w this function; we are keeping it simple
-#df=T just means we are returning the output as a data frame
+#df=T just means we are returning the output as a data frame (otherwise will return a list)
+#a note that this doesn't have to be used with just points; can be used with polygons (e.g. buffers) too - in that case,
+#extract() will extract all of the pixels within those polygons
+#you may want to add a "fun = mean" or some other operation to summarize the pixel values for each polygon
 values <- extract(stack, Hwange_pts_sp, df=T)
 #let's write this to .csv!
 write.csv(values, "extracted_raster_values.csv")
@@ -700,7 +711,12 @@ stack_import<- stack("raster_stack.tif")
 elev <- subset(stack_import,subset=2)
 plot(elev)
 
+#good exercise would be reading in polygon, generating 20 random points in polygon, doing 100-m buffer around 
+#each, and summarizing percent forest
+
 #please see links in slides for how to do "other" tasks that we don't have enough time to cover
 #(1) merging rasters together
-#(2) calculating proportion of discrete land cover types within polygons (can be grids or
+#(2) basic raster calculations (adding, subtracting)
+#(3) convert polygon to raster
+#(4) calculating proportion of discrete land cover types within polygons (can be grids or
 #buffers around points)

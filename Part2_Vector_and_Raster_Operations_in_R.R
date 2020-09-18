@@ -112,6 +112,8 @@ PAs_road_isect <- PAs[honduras_roads,]
 #oh man! coordinate systems aren't the same. we need to project the roads to the same coord system
 honduras_roads_UTM <- st_transform(honduras_roads, crs = "+proj=utm +zone=16 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 #alternatively, we could have used "crs = crs(PAs)" to import the CRS from "PAs"
+
+#let's try that intersect again
 PAs_road_isect <- PAs[honduras_roads_UTM,]
 
 #let's see what we get
@@ -349,6 +351,8 @@ library(ggplot2)
 library(dplyr)
 library(raster)
 
+# ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
+
 setwd("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe")
 #first, let's read in our shapefile of Hwange NP
 Hwange <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/Hwange_NP.shp")
@@ -467,6 +471,10 @@ plot(elev_crop_UTM)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 #ok, we are good!
 
+#we are going to write this raster to file so we can use it later
+#set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
+writeRaster(elev_crop_UTM, "elev_Hwange.tif", format="GTiff", overwrite=T, NAflag=-9999)
+
 #what if we wanted to plot in ggplot?
 #it's slightly more annoying bc we have to convert the raster to a data frame first
 
@@ -484,52 +492,6 @@ ggplot() +
 #values outside of an expected range can be considered suspect
 ggplot() +
   geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
-
-#what if we wanted to plot elevation in four classes?
-#on the one hand, we can have dplyr determine those breaks 
-#give the column name of the raster values to cut()
-#note that we have four breaks for four classes
-
-elev_df_fourgroups <- elev_df %>%
-  mutate(elev_brk = cut(aster_image_20160624, breaks = 4))
-
-#you can then see how many pixels fall into each group
-elev_df_fourgroups %>%
-  group_by(elev_brk) %>%
-  count()
-
-#man, we have NA values. where are they? 
-ggplot() +
-  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = aster_image_20160624)) +
-  scale_fill_viridis_c(na.value = 'red') 
-#ok, they are some border cells
-#can use trim() argument in raster package to get rid of these cells, but we're ok for now
-#trim gets rid of NAs in the outer rows and columns 
-
-#now let's plot these four classes
-#coord_quickmap() does a Mercator coordinate output and is appropriate for smaller study areas
-ggplot() +
-  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_brk)) +
-  coord_quickmap()
-
-#what if we want these breaks to be manual?
-breaks <- c(800, 900, 1000, 1100, 1200)
-
-elev_df_manualbrk <- elev_df %>%
-  mutate(elev_brk_manual = cut(aster_image_20160624, breaks = breaks))
-
-#how many pixels fall into each group?
-#you can then see how many pixels fall into each group
-elev_df_manualbrk %>%
-  group_by(elev_brk_manual) %>%
-  count()
-
-#now let's plot these four classes
-#coord_quickmap() does a Mercator coordinate output and is appropriate for smaller study areas
-ggplot() +
-  geom_raster(data = elev_df_manualbrk , aes(x = x, y = y, fill = elev_brk_manual)) +
-  coord_quickmap()
-
 
 
 #now let's read in our MODIS data

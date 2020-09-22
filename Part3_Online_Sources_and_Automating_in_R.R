@@ -4,6 +4,7 @@ library(sp)
 library(sf)
 library(raster)
 library(rgeos)
+setwd("C:\\Users\\acheesem\\Desktop\\ESF\\Classes Taught\\GIS in R workshop")#Change to your working directory path
 
 ##part 1
 #Make an object
@@ -52,7 +53,6 @@ df[3,2]
 #Take the mean of the numbers column
 mean(df$numbers)
 
-
 ##create unprojected spatial data
 data<-data.frame(long=c(-76.13332,-76.86515,-76.851651),
                  lat=c(42.85632,42.65465,42.51311))
@@ -60,11 +60,62 @@ plot(data)#plot spatial data
 
 
 ##Create projected spatial data with sp
-crdref <- CRS("+init=epsg:4326")
+crdref <- crs("+init=epsg:4326")
 crdref
-pts <- SpatialPoints(data, proj4string=crdref)
+
+pts <- SpatialPoints(cbind(data$long,data$lat), proj4string=crdref)
+pts
 plot(pts)
 
+##Create spatialpointsdataframe
+#Create attributes
+
+att<-data.frame(site=c("Pond","River","Forest"),ID=1:nrow(data))
+spdf<-SpatialPointsDataFrame(pts,data=att,proj4string = crdref)
+#str(spdf)#look at structure
+spdf
+#plot(spdf)
+
+#write spdf to a shapefile
+shapefile(spdf,"myshapefile.shp")
+
+#read in myshapefile
+shp<-shapefile("myshapefile.shp")
+class(shp)
+head(shp)
+str(shp)
+crs(shp)
+plot(shp)
+
+
+geo_data<-data.frame(shp)
+
+### sf package
+sf.pts<-st_as_sf(geo_data, coords = c("coords.x1", "coords.x2"), crs = crs(shp))
+sf.pts
+#read in sf
+nc <- st_read("myshapefile.shp")
+
+#write with sf
+st_write(nc, "myshapefile.shp", delete_layer = TRUE)
+
+
+
+#####Raster package
+r <- raster(ncol=13, nrow=10,crs=crs(shp))
+values(r) <- c(rep(0,16),1,rep(0,5),1,rep(0,7),1,0,0,
+               0,1,rep(0,7),rep(1,7),0,0,0,0,0,1,1,0,1,1,1,0,1,1,0,0,0,rep(1,11),
+               0,0,1,0,rep(1,7),0,1,0,0,1,0,1,rep(0,5),1,0,1,0,0,0,0,0,1,1,0,
+               1,1,rep(0,17))
+r
+plot(r,col=c("black","green"))
+
+#save raster
+writeRaster(r,"myraster.tif")
+
+#load raster
+r2 <- raster("myraster.tif")
+plot(r2,col=c("black","green"))
 
 #resources LP came across, ditch em or not
 #import .tifs in single step and plot time series in ggplot: https://datacarpentry.org/r-raster-vector-geospatial/12-time-series-raster/index.html

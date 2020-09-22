@@ -100,7 +100,7 @@ ggplot() +
   ggtitle("Roads and Waterholes in Hwange NP", subtitle = "2020")+
   coord_sf()
 
-#And, for one final thing, let's make the waterholes diamonds instead of circles
+#Let's make the waterholes diamonds instead of circles
 #see https://ggplot2.tidyverse.org/articles/ggplot2-specs.html for a lot of ggplot aesthetics
 #here, shape=18 corresponds to a diamond
 #got rid of title here bc titles are unusual in publications
@@ -111,6 +111,58 @@ ggplot() +
   scale_fill_manual(values = "black", name = "")+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   coord_sf()
+
+#And, for a final foray with vector mapping, let's explore different basemaps
+#be sure that you have a 64-bit version of java installed if you are using 64-bit R
+library(ggmap)
+#first, you need to register for an API key here:  https://cloud.google.com/maps-platform/
+#then you need to type in your key in order to enable Google's map services
+register_google(key = "AIzaSyB6hLwmyh0NAURYfeLQ9j7ivOgOk5ip43o", write = TRUE)
+
+#let's get the bounding box of Zimbabwe
+#country boundaries from https://gadm.org/
+Zimbabwe <- getData("GADM",country="Zimbabwe",level=0)
+Zimbabwe_sf <- st_as_sf(Zimbabwe)
+plot(Zimbabwe_sf)
+extent <- st_bbox(Zimbabwe_sf)
+
+#let's do a "watercolor" theme from "stamen" source
+#let's get Hwange NP in there
+
+#let's provide the coordinates for the extent, as well as the zoom
+#lower numbers means coarser zoom; can go from 3-21
+stamen_watercolor <- get_stamenmap(bbox = c(extent[[1]], extent[[2]], extent[[3]], extent[[4]]),
+                      maptype = "watercolor", 
+                      crop = T, zoom=8)
+stamen_terrain <- get_stamenmap(bbox = c(extent[[1]], extent[[2]], extent[[3]], extent[[4]]),
+                                   maptype = "terrain", 
+                                   crop = T, zoom=7)
+#getting a googlemap is a bit different because it works on a center coordinate
+google_satellite <- get_googlemap(center = c(29.5, -19),
+                                maptype = "satellite", 
+                                crop = F, zoom=6)
+google_hybrid <- get_googlemap(center = c(29.5, -19),
+                                  maptype = "hybrid", 
+                                  crop = F, zoom=6)
+
+ggmap(stamen_watercolor) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE)+
+  ggtitle("Source = 'stamen', type= 'watercolor'")
+ggmap(stamen_terrain) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE) +
+  ggtitle("Source = 'stamen', type= 'terrain'")
+ggmap(google_satellite) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
+  coord_sf(xlim=c(25,34), ylim=c(-23,-15))+
+  ggtitle("Source = 'google', type= 'satellite'")
+ggmap(google_hybrid) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
+  coord_sf(xlim=c(25,34), ylim=c(-23,-15))+
+  ggtitle("Source = 'google', type= 'hybrid'")
 
 # ---- RASTER ONLY ----
 

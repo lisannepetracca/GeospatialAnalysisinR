@@ -1,7 +1,7 @@
 install.packages("devtools")
-devtools::install_github("ropensci/FedData")##Probably need to install this first - may need to close instances of R / restart computer
+devtools::install_github("ropensci/FedData")##Probably need to install this & devtools first - may need to close instances of R / restart computer
 install.packages(c("sp", "sf", "raster", "rgeos"))
-install.packages(c("move","adehabitatHR","lme4","ggmap"))
+install.packages(c("move","adehabitatHR","rgbif","ggmap"))
 
 library(sp)
 library(sf)
@@ -280,8 +280,8 @@ samp$LC<-extract(nlcd,samp)
 samp$pred<-as.numeric(predict(model,newdata=samp,type='response'))
 
 #scale predictions
-samp$pred<-samp$pred/max(samp$pred,na.rm=T)
 min(samp$pred,na.rm=T)
+samp$pred<-(samp$pred-min(samp$pred,na.rm=T))/(max(samp$pred,na.rm=T)-min(samp$pred,na.rm=T))
 
 #need to lower resolution of raster for processing
 p.ras<-aggregate(nlcd, fact=12)

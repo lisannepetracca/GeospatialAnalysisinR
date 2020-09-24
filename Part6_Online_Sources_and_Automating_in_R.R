@@ -9,7 +9,6 @@ library(raster)
 library(move)
 library(FedData)
 library(adehabitatHR)
-library(lme4)
 library(rgbif)
 library(ggmap)
 wd<-setwd("C:\\Users\\acheesem\\Desktop\\ESF\\Classes Taught\\GIS in R workshop")#Change to your working directory path
@@ -236,6 +235,10 @@ for (i in 1 :length(l)){
 #add new column to marte to name used points with 1
 marten$used<-1
 
+#plot the used points
+plot(st_geometry(marten),col=(marten$used)+1,pch=16,cex=0.5)
+
+
 #look at marten
 names(marten)
 
@@ -251,6 +254,10 @@ out <- st_sample(get(l[i]), nrow(marten[marten$individual.local.identifier==
 out<-st_sf(individual.local.identifier=unique(marten.drop$individual.local.identifier)[i],used=rep(0,length(out)),geometry=out)
 mart<-rbind(mart,out)
 }
+
+#plot the used and available points
+plot(st_geometry(mart),col=(mart$used)+1,pch=16,cex=0.5)
+
 
 #check that coord systems align
 crs(mart)

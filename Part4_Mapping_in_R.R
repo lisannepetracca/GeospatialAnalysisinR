@@ -11,14 +11,16 @@ library(sf)
 library(ggplot2)
 library(dplyr)
 library(raster)
+library(grid)
 
 setwd("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe")
+
 #first, let's read in our shapefile of Hwange NP (polygon)
-HwangeNP <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/Hwange_NP.shp")
+HwangeNP <- st_read("Hwange_NP.shp")
 #then our roads (line)
-roads <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/ZWE_roads.shp")
+roads <- st_read("ZWE_roads.shp")
 #then our waterholes (point)
-waterholes <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/waterholes.shp")
+waterholes <- st_read("waterholes.shp")
 
 #let's project roads to wGS 1984 UTM Zone 35S to match the others
 roads <- st_transform(roads, crs = 32735)
@@ -279,4 +281,79 @@ ggplot() +
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme(axis.title = element_blank())+
   coord_sf()
+
+
+
+
+########### MAKING MULTIPLOTS
+
+
+sample_vp_1 <- viewport(x = 0, y = 0, 
+                        width =0.5, height = 1,
+                        just = c("left", "bottom"))
+sample_vp_2 <- viewport(x = 0.5, y = 0, 
+                        width = 0.5, height = 1,
+                        just = c("left", "bottom"))
+sample_vp_3 <- viewport(x = 0, y = .8, 
+                        width = 1, height = .1,
+                        just = c("left", "bottom"))
+
+dev.off()
+pushViewport(sample_vp_1)
+grid.draw(rectGrob(gp = gpar(col = "green",lwd=4)))
+popViewport(1)
+
+pushViewport(sample_vp_2)
+grid.draw(rectGrob(gp = gpar(col = "blue",lwd=4)))
+popViewport(1)
+
+pushViewport(sample_vp_3)
+grid.draw(rectGrob(gp = gpar(col = "black",lwd=4)))
+popViewport(1)
+
+
+map<-ggmap(stamen_watercolor) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE)
+map2<-ggmap(google_satellite) +
+  geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
+  geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
+  coord_sf(xlim=c(25,34), ylim=c(-23,-15))
+
+
+dev.off()
+pushViewport(sample_vp_1)
+grid.draw(ggplotGrob(map))
+popViewport(1)
+
+
+pushViewport(sample_vp_2)
+grid.draw(ggplotGrob(map2))
+popViewport(1)
+
+pushViewport(sample_vp_3)
+grid.text("Just looking at some maps")
+popViewport(1)
+
+
+
+w<-ggplot() +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
+  geom_sf(data = HwangeNP, color = "black", fill = NA, size=2) +
+  geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
+  scale_fill_viridis_c(name = "Elevation (m)")+
+  scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
+  theme(axis.title = element_blank())+
+  coord_sf()
+
+dev.off()
+grid.draw(ggplotGrob(w))
+md_inset <- viewport(x = 0, y = 0, 
+                     just = c("left", "bottom"),
+                     width = 0.3, height = 0.32)
+pushViewport(md_inset)
+grid.draw(rectGrob(gp = gpar(alpha = 0.5, col = "white")))
+grid.draw(ggplotGrob(map2))
+grid.draw(rectGrob(gp = gpar(fill = NA, size=2,col = "black")))
+popViewport()
 

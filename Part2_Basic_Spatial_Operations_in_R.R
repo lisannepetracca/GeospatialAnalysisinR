@@ -1,8 +1,7 @@
-install.packages(c("sp", "sf", "raster", "rgeos"))
+install.packages(c("sp", "sf", "raster"))
 library(sp)
 library(sf)
 library(raster)
-library(rgeos)
 setwd("C:\\Users\\acheesem\\Desktop\\ESF\\Classes Taught\\GIS in R workshop")#Change to your working directory path
 
 ##part 1
@@ -81,7 +80,7 @@ spdf
 #plot(spdf)
 
 #write spdf to a shapefile
-shapefile(spdf,"myshapefile.shp")
+shapefile(spdf,"myshapefile.shp",overwrite=T)
 
 #read in myshapefile
 shp<-shapefile("myshapefile.shp")
@@ -126,7 +125,7 @@ r
 plot(r,col=c("black","green"))
 
 #save raster to file
-writeRaster(r,"myraster.tif")
+writeRaster(r,"myraster.tif",overwrite=T)
 
 #load raster from file
 r2 <- raster("myraster.tif")

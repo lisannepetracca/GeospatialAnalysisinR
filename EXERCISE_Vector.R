@@ -1,6 +1,8 @@
 setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
 
 library(sf)
+library(units)
+library(ggplot2)
 
 #read in PAs
 PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")

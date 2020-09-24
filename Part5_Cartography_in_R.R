@@ -134,18 +134,18 @@ extent <- st_bbox(Zimbabwe_sf)
 #let's provide the coordinates for the extent, as well as the zoom
 #lower numbers means coarser zoom; can go from 3-21
 stamen_watercolor <- get_stamenmap(bbox = c(extent[[1]], extent[[2]], extent[[3]], extent[[4]]),
-                      maptype = "watercolor", 
-                      crop = T, zoom=8)
+                                   maptype = "watercolor", 
+                                   crop = T, zoom=8)
 stamen_terrain <- get_stamenmap(bbox = c(extent[[1]], extent[[2]], extent[[3]], extent[[4]]),
-                                   maptype = "terrain", 
-                                   crop = T, zoom=7)
+                                maptype = "terrain", 
+                                crop = T, zoom=7)
 #getting a googlemap is a bit different because it works on a center coordinate
 google_satellite <- get_googlemap(center = c(29.5, -19),
-                                maptype = "satellite", 
-                                crop = F, zoom=6)
-google_hybrid <- get_googlemap(center = c(29.5, -19),
-                                  maptype = "hybrid", 
+                                  maptype = "satellite", 
                                   crop = F, zoom=6)
+google_hybrid <- get_googlemap(center = c(29.5, -19),
+                               maptype = "hybrid", 
+                               crop = F, zoom=6)
 
 ggmap(stamen_watercolor) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
@@ -237,7 +237,7 @@ ggplot() +
 ggplot() +
   geom_raster(data = elev_df_manualbrk , aes(x = x, y = y, fill = elev_brk_manual)) +
   scale_fill_manual(values = terrain.colors(4))
-  
+
 #now let's move onto aesthetics & customization
 #we'll begin by changing the legend title
 #then changing how the elevation range is presented
@@ -255,7 +255,7 @@ ggplot() +
   geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
   scale_fill_viridis_c() +
   theme(axis.title = element_blank())
-        
+
 #and how would we change some aesthetics?
 #let's change legend name
 #move legend theme to bottom

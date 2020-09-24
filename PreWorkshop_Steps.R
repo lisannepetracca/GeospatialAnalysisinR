@@ -9,7 +9,7 @@ devtools::install_github("ropensci/FedData")
 
 #then we will install other packages that *are* in the CRAN library
 #***IF IT ASKS TO RESTART R, YOU CAN SAY YES IF YOU'D LIKE TO***
-install.packages(c("sp", "sf", "raster", "ggplot2", "dplyr", "units", "rnaturalearth", "rgdal", "ggmap",
+install.packages(c("sp", "sf", "raster", "rgeos", "ggplot2", "dplyr", "units", "rnaturalearth", "rgdal", "ggmap",
                    "move","adehabitatHR","rgbif", "grid"))
 #***RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages>"***
 
@@ -17,6 +17,7 @@ install.packages(c("sp", "sf", "raster", "ggplot2", "dplyr", "units", "rnaturale
 library(sp)
 library(sf)
 library(raster)
+library(rgeos)
 library(ggplot2)
 library(dplyr)
 library(units)

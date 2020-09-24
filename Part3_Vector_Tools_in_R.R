@@ -1,16 +1,26 @@
 # ---- VECTOR OPERATIONS ----
 
+#let's set our working directory first
+setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+
+#and let's load all the libraries we need
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(raster)
+library(ggplot2)
+library(dplyr)
+library(units)
+library(rnaturalearth)
+
 # ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
 
 #In this example, we will create buffers of 50 m around a series of camera traps in 
 #Honduras, and then clip those buffers to Honduras land area
 
-library(sf)
-library(ggplot2)
-library(dplyr)
-library(raster)
+
 #read in the shapefile with st_read
-PAs <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Protected_Areas_2007.shp")
+PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")
 
 #let's see what the columns of the attribute table are
 names(PAs)
@@ -32,7 +42,7 @@ PAs
 
 
 #let's plot this multipolygon
-library(ggplot2)
+
 ggplot() + 
   geom_sf(data = PAs, size = 1, color = "black", fill = "darkgreen") + 
   ggtitle("PAs in Honduras")
@@ -48,7 +58,7 @@ names(PAs)
 PAs$NOMBRE
 
 #let's say we want to extract only those PAs that are National Parks (Parque Nacional)
-library(dplyr)
+
 #to see unique levels within a certain column, we can use "levels" argument
 levels(PAs$CATEGORIA)
 
@@ -63,7 +73,7 @@ nrow(NationalParks)
 #let's do area first
 PAs$area_m2 <- st_area(PAs)
 #these are really big numbers though. to make it km2, try
-library(units)
+
 PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 
 #you can do the same for perimeter using st_perimeter!
@@ -73,7 +83,7 @@ st_write(PAs, "test.csv") #geometry as xy?
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
 
-library(dplyr)
+#CHANGE THIS CODE
 BigPAs <- PAs %>% 
   filter(area_km2 > 500)
 #how many PAs are greater than 500 km2 in area?
@@ -87,7 +97,7 @@ ggplot() +
 
 #now let's add an outline of honduras, shall we?
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
-library(rnaturalearth)
+
 countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
 names(countries)
 honduras <- countries %>% filter(NAME == "Honduras")
@@ -99,7 +109,7 @@ ggplot() +
 
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
 #read in the shapefile with st_read
-honduras_roads <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Roads_1999_CCAD.shp")
+honduras_roads <- st_read("Example_Honduras\\Honduras_Roads_1999_CCAD.shp")
 
 #first, let's use st_perimeter() to see how long these roads are
 honduras_roads$length <- st_length(honduras_roads)
@@ -142,7 +152,7 @@ st_write(PA_centroids, "test2.csv", layer_options = "GEOMETRY=AS_XY")
 
 #let's import the csv of camera trap locations like any other .csv
 
-camlocs <- read.csv("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Camera_Coordinates_JeannetteKawas.csv")
+camlocs <- read.csv("Example_Honduras\\Camera_Coordinates_JeannetteKawas.csv")
 
 #let's see what's in this table
 head(camlocs)
@@ -164,7 +174,7 @@ ggplot() +
 
 #now let's save this to a .shp if we want to use it in ArcMap
 st_write(camlocs_sf,
-         "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.shp", driver = "ESRI Shapefile")
+         "Example_Honduras\\camlocs.shp", driver = "ESRI Shapefile")
 
 #let's first get a distance matrix between points
 head(camlocs_sf)
@@ -183,7 +193,6 @@ ggplot() +
 
 test <- st_union(camlocs_sf)
 #experimenting w mcp (convex hull?)
-library
 cam_convexhull <- st_convex_hull(st_union(camlocs_sf)) 
 ggplot() +
   geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
@@ -196,7 +205,7 @@ area <- st_area(cam_convexhull)
 
 #ok so let's see how this looks when we want to display this polygon over the border of Honduras
 #let's read in a more detailed version of Honduras boundary
-Honduras <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/Honduras_Border.shp")
+Honduras <- st_read("Example_Honduras\\Honduras_Border.shp")
 
 ggplot() +
   geom_sf(data = Honduras) +
@@ -340,4 +349,4 @@ ggplot() +
 
 
 #let's save these points to a .csv
-st_write(random_points, "G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Honduras/camlocs.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(random_points, "Example_Honduras\\camlocs.csv", layer_options = "GEOMETRY=AS_XY")

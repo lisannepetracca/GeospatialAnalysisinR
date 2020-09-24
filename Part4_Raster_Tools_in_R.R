@@ -1,16 +1,21 @@
+# ---- RASTER TOOLS IN R ----
 
-####---- RASTER TOOLS IN R ----####
+#let's set our working directory first
+setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+
+#and let's load all the libraries we need
 
 library(sf)
 library(ggplot2)
 library(dplyr)
 library(raster)
+library(rgdal)
+library(velox)
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
-setwd("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe")
 #first, let's read in our shapefile of Hwange NP
-Hwange <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/Hwange_NP.shp")
+Hwange <- st_read("Example_Zimbabwe\\Hwange_NP.shp")
 plot(Hwange[c("NAME")])
 #or
 plot(Hwange[1])
@@ -27,8 +32,8 @@ ggplot() +
 
 #now let's bring in our waterholes and roads (again using package sf)
 
-roads <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/ZWE_roads.shp")
-waterholes <- st_read("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/waterholes.shp")
+roads <- st_read("Example_Zimbabwe\\ZWE_roads.shp")
+waterholes <- st_read("Example_Zimbabwe\\waterholes.shp")
 
 ggplot() +
   geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
@@ -57,11 +62,11 @@ roads_UTM <- st_transform(roads, crs = 32735)
 
 
 #now, before reading in the elevation data, let's check it out first
-library(rgdal)
-GDALinfo("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif")
+
+GDALinfo("Example_Zimbabwe\\aster_image_20160624.tif")
 
 #now let's read in the elevation (it's an aster image)
-elev <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/aster_image_20160624.tif") 
+elev <- raster("Example_Zimbabwe\\aster_image_20160624.tif") 
 
 #how can we get an overview of the imported raster?
 elev
@@ -86,16 +91,14 @@ plot(elev)
 #what is the coordinate system? 
 crs(elev)
 
-#let's use package velox to make raster processing a bit faster
-library(velox)
-
 #let's add Hwange to the elevation tile (Hwange border needs to be converted to WGS84 first)
 Hwange_WGS <- st_transform(Hwange, crs=4326)
 plot(Hwange_WGS[1], add=T)
 
 #ok, so there is a lot of extra raster that we don't want to work with
-#let's crop to hwange extent to make things like reprojecting go faster
-#let's proceed with the extent for Hwange_WGS 
+#let's use package velox to make raster processing a bit faster
+#we'll crop to hwange extent to make things like reprojecting go faster
+#we'll proceed with the extent for Hwange_WGS 
 extent(Hwange_WGS)
 #this line creates an object from the four numbers within the extent of Hwange_WGS
 cropext <- c(extent(Hwange_WGS)[1:4])
@@ -120,7 +123,7 @@ crs(elev_crop)
 #this is also easily found on spatialreference.org
 
 #goes really fast! this resolution will match our resolution for percent veg cover
-elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+init=epsg:32735")
 #let's make sure it looks ok with our Hwange shapefile in UTM coordinates
 plot(elev_crop_UTM)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
@@ -165,7 +168,7 @@ ggplot() +
 library(gdalUtils)
 
 #creates a list of the subdatasets within the hdf4 MODIS files 
-subdata <- get_subdatasets("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/MOD44B.A2016065.h20v10.006.2017081121817.hdf")
+subdata <- get_subdatasets("Example_Zimbabwe\\MOD44B.A2016065.h20v10.006.2017081121817.hdf")
 
 #ok, let's see what those subdatasets are
 subdata
@@ -182,7 +185,7 @@ gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
 #BACK TO THE WORKSHOP NOW!
 #let's read in this .tif as a raster
 
-percveg <- raster("G:/My Drive/GitHub/GeospatialAnalysisinR/Data/Example_Zimbabwe/PercVegCover_2016.tif")
+percveg <- raster("Example_Zimbabwe\\PercVegCover_2016.tif")
 crs(percveg)
 #it gives an error ab the coordinate system but this crs is correct
 #modis uses a sinusoidal coordinate system that can be found here:
@@ -198,7 +201,7 @@ plot(percveg)
 #no use cropping here because the resolution is coarser (250 m)
 
 #takes <1 minute
-percveg_UTM_S <- projectRaster(percveg, res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+percveg_UTM_S <- projectRaster(percveg, res=250, crs=crs="+init=epsg:32735")
 
 #let's see what it looks like with Hwange NP
 plot(percveg_UTM_S)
@@ -254,7 +257,7 @@ plot(roads_hwange[1])
 require(rgeos)
 
 #create empty raster such that we can *eventually* store our distances there
-dist_road <-  raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+dist_road <-  raster(extent(veg_reclass), res=250, crs="+init=epsg:32735")
 #need to make roads a spatial object in package sp
 roads_sp <- as(roads_hwange,"Spatial")
 #let's see what they look like
@@ -277,7 +280,7 @@ plot(roads_hwange[1], col="black",lwd=2,add=T)
 
 #now let's do it for points in package raster
 #creating another empty raster
-s <- raster(extent(veg_reclass), res=250, crs="+proj=utm +zone=35 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+s <- raster(extent(veg_reclass), res=250, crs="+init=epsg:32735")
 #calculating distance from points (waterholes)
 dist_waterhole <- distanceFromPoints(s, st_coordinates(waterholes))
 #plotting the output

@@ -15,9 +15,7 @@ library(rnaturalearth)
 
 # ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
 
-#In this example, we will create buffers of 50 m around a series of camera traps in 
-#Honduras, and then clip those buffers to Honduras land area
-
+#in this example, we will explore protected areas in Honduras and subset by name and size
 
 #read in the shapefile with st_read
 PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")
@@ -25,7 +23,7 @@ PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")
 #let's see what the columns of the attribute table are
 names(PAs)
 
-#alternatively, to see the top rows of data
+#alternatively, to see the top six rows of data
 head(PAs)
 
 #I wonder what the coordinate system is?
@@ -49,8 +47,8 @@ ggplot() +
 
 #alternatively
 plot(PAs)
-
-#NOTE add labels for "nombre" panel
+#this will display just the first attribute
+plot(PAs[1])
 
 #let's explore the different names of PAs in Honduras
 #this is basically like exploring the values within a certain column
@@ -58,12 +56,11 @@ names(PAs)
 PAs$NOMBRE
 
 #let's say we want to extract only those PAs that are National Parks (Parque Nacional)
+#to see unique values within a certain column, we can use "unique" argument
+unique(PAs$CATEGORIA)
 
-#to see unique levels within a certain column, we can use "levels" argument
-levels(PAs$CATEGORIA)
-
-NationalParks <- PAs %>% 
-  filter(CATEGORIA == "Parque Nacional")
+#now let's use bracketing to subset only those PAs that are national parks
+NationalParks <- PAs[PAs$CATEGORIA == "Parque Nacional",]
 
 #how many PAs are NPs?
 nrow(NationalParks)
@@ -72,35 +69,33 @@ nrow(NationalParks)
 #for this we need to calculate geometry
 #let's do area first
 PAs$area_m2 <- st_area(PAs)
-#these are really big numbers though. to make it km2, try
 
+#these are really big numbers though. to make it km2, try
 PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 
-#you can do the same for perimeter using st_perimeter!
-
 #if we want to save this super-cool geometry, we can do
-st_write(PAs, "test.csv") #geometry as xy?
+st_write(PAs, "Honduras_PA_areas.csv") 
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
-
-#CHANGE THIS CODE
-BigPAs <- PAs %>% 
-  filter(area_km2 > 500)
+#let's use subsetting with brackets again
+BigPAs <- PAs[PAs$area_km2 > 500,]
 #how many PAs are greater than 500 km2 in area?
 nrow(BigPAs)
 
 #We can also adjust our colors to give each PA a different color
 ggplot() + 
   geom_sf(data = BigPAs, aes(color = factor(NOMBRE)), size = 1.5) +
-  labs(color = 'NOMBRE') +
+  labs(color = "NOMBRE") +
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
 #now let's add an outline of honduras, shall we?
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
-
 countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
 names(countries)
+#let's grab honduras from this sf object
 honduras <- countries %>% filter(NAME == "Honduras")
+
+#and let's plot!
 ggplot() + 
   geom_sf(data = BigPAs, aes(color = factor(NOMBRE)), size = 1.5) +
   geom_sf(data = honduras, fill=NA, size = 1) +
@@ -111,7 +106,7 @@ ggplot() +
 #read in the shapefile with st_read
 honduras_roads <- st_read("Example_Honduras\\Honduras_Roads_1999_CCAD.shp")
 
-#first, let's use st_perimeter() to see how long these roads are
+#first, let's use st_length() to see how long these roads are
 honduras_roads$length <- st_length(honduras_roads)
 head(honduras_roads)
 
@@ -119,7 +114,7 @@ head(honduras_roads)
 PAs_road_isect <- PAs[honduras_roads,]
 
 #oh man! coordinate systems aren't the same. we need to project the roads to the same coord system
-honduras_roads_UTM <- st_transform(honduras_roads, crs = "+proj=utm +zone=16 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+honduras_roads_UTM <- st_transform(honduras_roads, crs =32616)
 #alternatively, we could have used "crs = crs(PAs)" to import the CRS from "PAs"
 
 #let's try that intersect again
@@ -134,21 +129,28 @@ ggplot() +
   ggtitle("PAs that intersect roads in Honduras", subtitle = "Subtitle option if you want it!")
 
 #let's do one last thing with these PAs - create centroids and save them as .csv
-
 PA_centroids <- st_centroid(PAs)
+#ignore warning message
 #this creates a whole new geometry type (points)
 
 #let's see what this looks like
 ggplot() + 
   geom_sf(data = PAs, colour="darkgreen",fill="lightgreen", size = 1) +
   geom_sf(data = honduras, fill=NA, size = 1) +
-  geom_sf(data=centroids, colour="yellow", size=2)+
+  geom_sf(data=PA_centroids, colour="yellow", size=2)+
   ggtitle("Centroids of PAs in Honduras")
 
 #and then save the centroid coordinates as .csv
-st_write(PA_centroids, "test2.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(PA_centroids, "PA_centroids.csv", layer_options = "GEOMETRY=AS_XY")
 
-# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ----
+
+
+# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ---- ####
+
+
+#In this example, we will create buffers of 500 m around a series of camera traps in 
+#Honduras, and then clip those buffers to Honduras land area
+
 
 #let's import the csv of camera trap locations like any other .csv
 
@@ -167,19 +169,18 @@ camlocs_sf <- st_as_sf(camlocs, coords =
 #let's make sure the coordinate system is right
 st_crs(camlocs_sf)
 
-#let's plot the locations to see where they are in honduras
+#let's plot the locations to see where they are
 ggplot() +
   geom_sf(data = camlocs_sf) +
   ggtitle("Map of Camera Trap Locations")
 
 #now let's save this to a .shp if we want to use it in ArcMap
 st_write(camlocs_sf,
-         "Example_Honduras\\camlocs.shp", driver = "ESRI Shapefile")
+         "camera_locations.shp", driver = "ESRI Shapefile")
 
 #let's first get a distance matrix between points
 head(camlocs_sf)
 dist_matrix <- st_distance(camlocs_sf, camlocs_sf)
-
 
 #then let's create a buffer of 500 m around the camera trap locations
 cam_500m_buffer <- st_buffer(camlocs_sf, dist = 500)
@@ -191,9 +192,11 @@ ggplot() +
   geom_sf(data = camlocs_sf) +
   ggtitle("Map of Camera Trap Locations")
 
-test <- st_union(camlocs_sf)
-#experimenting w mcp (convex hull?)
+#creating a convex hull polygon around the camera trap locations
+#need to create a multipoint feature from the camlocs_sf (a point feature) and then create the convex hull polygon
 cam_convexhull <- st_convex_hull(st_union(camlocs_sf)) 
+
+#let's plot!
 ggplot() +
   geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
   geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
@@ -201,12 +204,13 @@ ggplot() +
   ggtitle("Map of Camera Trap Locations")
 
 #pop quiz: how would we then get area of that convex hull polygon?
-area <- st_area(cam_convexhull) 
+(area <- st_area(cam_convexhull))
 
 #ok so let's see how this looks when we want to display this polygon over the border of Honduras
 #let's read in a more detailed version of Honduras boundary
 Honduras <- st_read("Example_Honduras\\Honduras_Border.shp")
 
+#let's plot where the camera traps are within the country
 ggplot() +
   geom_sf(data = Honduras) +
   geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
@@ -237,7 +241,7 @@ ggplot() +
 #oh no! the convex hull polygon includes the ocean! how can we crop to the Honduras boundary?
 
 #first, let's check the Honduras polygon to see what coordinate system is is using
-st_crs(Honduras)
+crs(Honduras)
 
 #ok, it is NAD 1927 UTM Zone 16N; this is very close to WGS 1984 UTM Zone 16N but isn't exact
 #let's transform the boundary to the same projection as the convex hull polygon
@@ -245,11 +249,14 @@ st_crs(Honduras)
 honduras_UTM <- st_transform(Honduras, crs =32616)
 
 #let's check to make sure the new polygon is in the correct projection
-st_crs(honduras_UTM)
+crs(honduras_UTM)
 
 #yay! it worked! now we can proceed with cropping
 cam_convexhull_land <- st_intersection(cam_convexhull, honduras_UTM)
+#quick plot
 plot(cam_convexhull_land)
+
+#better plot
 ggplot() +
   geom_sf(data = honduras_UTM) +
   geom_sf(data=cam_convexhull_land, fill=NA, color = "blue", size=2)+
@@ -259,16 +266,19 @@ ggplot() +
   ggtitle("Map of Camera Trap Locations")
 
 #how can we get the area (in square meters) of this new polygon?
-st_area(cam_convexhull_land)
+(st_area(cam_convexhull_land))
 
-#moving ahead to SAMPLING
+
+
+####---- SAMPLING TOOLS ----####
+
+
 
 #let's select the PA in Honduras called "Pico Bonito - Zona Nucleo"
 PAs$NOMBRE
 
 #first we will use dplyr package to select the PA by name from the greater multipolygon object
-PicoBonito <- PAs %>% 
-  filter(NOMBRE == "Pico Bonito-Zona Nucleo")
+PicoBonito <- PAs[PAs$NOMBRE == "Pico Bonito-Zona Nucleo",]
 
 #let's create 100 random points within the PA for vegetation sampling
 random_points <- st_sample (PicoBonito, 100, type="random", exact=T)
@@ -322,7 +332,7 @@ ggplot() +
 #I like the way the hexagon grid looks. What if we want to put in two camera traps at 
 #random locations within each hexagon?
 
-random_points <- st_sample (pico_16km2_grid_hex, size=2, type="random", exact=T)
+random_points <- st_sample(pico_16km2_grid_hex, size=2, type="random", exact=T)
 
 #what does it look like?
 ggplot() +
@@ -347,6 +357,5 @@ ggplot() +
   geom_sf(data=random_points, color = "purple", size=2)+
   labs(title=expression(paste("Two Random Pts Per Hexagon Cell in Pico Bonito NP")))
 
-
 #let's save these points to a .csv
-st_write(random_points, "Example_Honduras\\camlocs.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(random_points, "RandomPoints_PicoBonito.csv", layer_options = "GEOMETRY=AS_XY")

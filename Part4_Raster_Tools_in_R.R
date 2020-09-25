@@ -3,14 +3,18 @@
 #let's set our working directory first
 setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
 
-#and let's load all the libraries we need
+#we have to install one package that didn't make the list
+install.packages("rgeos")
 
+#let's load all the libraries we need
 library(sf)
 library(ggplot2)
 library(dplyr)
 library(raster)
 library(rgdal)
 library(velox)
+library(rgeos)
+
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
@@ -35,6 +39,7 @@ ggplot() +
 roads <- st_read("Example_Zimbabwe\\ZWE_roads.shp")
 waterholes <- st_read("Example_Zimbabwe\\waterholes.shp")
 
+#let's plot those vectors within Hwange
 ggplot() +
   geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
   geom_sf(data=roads, color = "black", size=1)+
@@ -58,11 +63,10 @@ ggplot() +
 #that's better!
 
 #checking the coordinate systems reveals our "roads" layer is WGS 1984. How can we convert to WGS 1984 UTM Zone 35S?
+crs(roads)
 roads_UTM <- st_transform(roads, crs = 32735)
 
-
 #now, before reading in the elevation data, let's check it out first
-
 GDALinfo("Example_Zimbabwe\\aster_image_20160624.tif")
 
 #now let's read in the elevation (it's an aster image)
@@ -71,7 +75,7 @@ elev <- raster("Example_Zimbabwe\\aster_image_20160624.tif")
 #how can we get an overview of the imported raster?
 elev
 
-#this is great, but doesn't provide much beyond min/max
+#this is great, but can we get more stats beyond min/max?
 #how can we get, say, quartiles of the data?
 #turns out it's the same for any vector or data frame column in R
 summary(elev)
@@ -83,7 +87,7 @@ summary(elev, maxsamp = ncell(elev))
 #what if we want the mean of the whole raster?
 #cellStats can also be used on a raster stack (something we will cover later)
 #in that case, will produce a vector where each value is associated with a raster from the stack
-mean <- cellStats(elev, mean)
+mean <- cellStats(elev, max)
 
 #here is a fast, simple means of plotting a raster
 plot(elev)
@@ -98,7 +102,7 @@ plot(Hwange_WGS[1], add=T)
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's use package velox to make raster processing a bit faster
 #we'll crop to hwange extent to make things like reprojecting go faster
-#we'll proceed with the extent for Hwange_WGS 
+#then we'll proceed with the extent for Hwange_WGS 
 extent(Hwange_WGS)
 #this line creates an object from the four numbers within the extent of Hwange_WGS
 cropext <- c(extent(Hwange_WGS)[1:4])
@@ -119,8 +123,7 @@ crs(elev_crop)
 
 #oh man, this crs (WGS 1984) doesn't match the other layers (which are in WGS 1984 UTM Zone 10N)
 #let's project using projectRaster
-#annoyingly, package raster doesn't use the numeric EPSG format like package sf does, so we need to use the proj.4 format
-#this is also easily found on spatialreference.org
+#we need to present our crs in a slightly different way than we're used to in package sf
 
 #goes really fast! this resolution will match our resolution for percent veg cover
 elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+init=epsg:32735")
@@ -131,10 +134,10 @@ plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 
 #we are going to write this raster to file so we can use it later
 #set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
-writeRaster(elev_crop_UTM, "elev_Hwange.tif", format="GTiff", overwrite=T, NAflag=-9999)
+writeRaster(elev_crop_UTM, "Example_Zimbabwe\\elev_Hwange.tif", format="GTiff", overwrite=T, NAflag=-9999)
 
 #what if we wanted to plot in ggplot?
-#it's slightly more annoying bc we have to convert the raster to a data frame first
+#it's just a bit trickier bc we have to convert the raster to a data frame first
 
 elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
 #now we can plot as we did for the vector data, but take note of "geom_raster" argument
@@ -200,17 +203,22 @@ plot(percveg)
 #ok so now we have to reproject to WGS 1984 UTM Zone 35S, like the other layers
 #no use cropping here because the resolution is coarser (250 m)
 
-#takes <1 minute
-percveg_UTM_S <- projectRaster(percveg, res=250, crs=crs="+init=epsg:32735")
+#takes ~1 minute
+percveg_UTM_S <- projectRaster(percveg, res=250, crs="+init=epsg:32735")
 
 #let's see what it looks like with Hwange NP
 plot(percveg_UTM_S)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 
 #let's crop so it looks nice
+#using the same steps we used earlier in this exercise
+#get the extent for Hwange
 cropext <- c(extent(Hwange)[1:4]) 
+#convert to VeloxRaster
 veg_vx <- velox(percveg_UTM_S)
+#perform cropping
 veg_vx$crop(cropext)
+#convert to Raster object
 veg_crop <- veg_vx$as.RasterLayer(band=1)
 
 #let's see what it looks like now!
@@ -219,12 +227,13 @@ plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 
 #let's try to make a raster stack of vegetation and elevation
 stack <- stack(veg_crop, elev_crop_UTM)
+#nooooo, we get an error ab different extents!
 #let's check out the extents of each
 
 extent(veg_crop)
 extent(elev_crop_UTM)
 
-#let's try realigning extents
+#we will need to realign extents here through resampling
 elev <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 stack <- stack(veg_crop, elev)
 
@@ -248,13 +257,12 @@ plot(veg_reclass)
 plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 
 #let's move on to getting distances from roads and waterholes
-
 #first, let's clip roads to hwange extent
 roads_hwange <- st_intersection(roads_UTM, Hwange)
+#ignore the warning message. we are ok.
 plot(roads_hwange[1])
 
-#for linear features (roads), let's use rgeos and gDistance function
-require(rgeos)
+#for distance to linear features (roads), let's use rgeos and gDistance function
 
 #create empty raster such that we can *eventually* store our distances there
 dist_road <-  raster(extent(veg_reclass), res=250, crs="+init=epsg:32735")
@@ -287,10 +295,13 @@ dist_waterhole <- distanceFromPoints(s, st_coordinates(waterholes))
 plot(dist_waterhole)
 plot(waterholes[1], col="black",lwd=2,add=T)
 
+#let's write this to raster to we can use it later
+writeRaster(dist_waterhole, "Dist_Waterhole_Hwange.tif", overwrite=T)
+
 #quick foray into neighborhood statistics
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
-#we are using 9 cells here to show how the values are "smoothed out" visually
-elev_focal <- focal(elev, w=matrix(1,15,15), fun=mean)
+#we are using 15 cells here to show how the values are "smoothed out" visually
+elev_focal <- focal(elev, w=matrix(1,15,15), fun="mean")
 #let's see the original
 plot(elev)
 #and now let's see the smoothed out version
@@ -330,9 +341,6 @@ writeRaster(stack, "raster_stack.tif", options="INTERLEAVE=BAND", overwrite=TRUE
 stack_import<- stack("raster_stack.tif")
 elev <- subset(stack_import,subset=2)
 plot(elev)
-
-#good exercise would be reading in polygon, generating 20 random points in polygon, doing 100-m buffer around 
-#each, and summarizing percent forest
 
 #please see links in slides for how to do "other" tasks that we don't have enough time to cover
 #(1) merging rasters together

@@ -2,7 +2,7 @@ library(raster)
 library(sf)
 setwd("C:/Users/acheesem/Desktop/ESF/Classes Taught/GIS in R workshop/AM Exercise")
 ras<-raster("moon.tif")
-
+plot(ras)
 
 x<-runif(25,0,350)
 y<-runif(25,0,500)

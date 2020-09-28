@@ -1,27 +1,32 @@
-install.packages(c("sp", "sf", "raster"))
+#install.packages(c("sp", "sf", "raster"))
 library(sp)
 library(sf)
 library(raster)
-setwd("C:\\Users\\acheesem\\Desktop\\ESF\\Classes Taught\\GIS in R workshop")#Change to your working directory path
+setwd("C:/Users/acheesem/Desktop/ESF/Classes Taught/GIS in R workshop")#Change to your working directory path
 
 ##part 1
-#Make an object
+#Make an object called obj with 1 element 'x'
 Obj<-"x"
+
+#run obj it will return 'x'
 Obj
 
-#Make a list
+#Make a vector (NOTE this is not the same as a spatial vector data type)
 lis<-c(1,5,7)
 
-#select the second item in the list
+#inspect 'lis'
+lis
+
+#select the second item in the vector lis
 lis[2]
 
-#select items 2 through 3 in the list
+#select items 2 through 3 in lis
 lis[c(2:3)]
 
 #select items 1 and 3 in the list
 lis[c(1,3)]
 
-#remove item 2 from the list, store in new object called 'lis2'
+#remove item 2 from lis, store in new object called 'lis2'
 lis2<-lis[-2]
 
 lis2# look at lis2
@@ -30,8 +35,11 @@ lis2# look at lis2
 lis[2]<-25
 lis#look at lis
 
-#make a data frame
+#make a data frame called df
 df<-data.frame(letters=c("a","b","c"),numbers=lis)
+
+#inspect df
+df
 
 #inspect data
 head(df) #look at first few rows
@@ -48,14 +56,22 @@ df[,2]
 #look at row 3 in numbers column
 df[3,2]
 
+#Run calculations or operations on data
 #Take the mean of the numbers column
 mean(df$numbers)
 
-##create unprojected spatial data
+
+###CAN WORK WITH SPATIAL DATA AS DATA FRAME 
+##create unprojected spatial data 
+  #NO PROJECTION - NOT GOOD
 data<-data.frame(long=c(-76.13332,-76.86515,-76.851651),
                  lat=c(42.85632,42.65465,42.51311))
-plot(data)#plot spatial data
 
+#plot spatial data
+plot(data)
+
+#########################################################################
+##### SPATIAL DATA TYPES SP, SF AND RASTER
 
 ##Create projected spatial data with sp
 #define coordinate system using EPSG code
@@ -63,7 +79,8 @@ crdref <- crs("+init=epsg:4326")
 #inspect the CRS
 crdref
 
-#create spatial points object
+#create spatial points class object names pts from data
+data#remember what data looks like?
 pts <- SpatialPoints(cbind(data$long,data$lat), proj4string=crdref)
 
 #inspect pts
@@ -71,46 +88,61 @@ pts
 plot(pts)
 
 ##Create spatialpointsdataframe
-#Create attributes
-
+#Create attributes corresponding to the row from data 
+  #(alternitively you would pull from your database/csv etc.)
+  # here creating sites pond, river, and forest, and ID for each row in data
 att<-data.frame(site=c("Pond","River","Forest"),ID=1:nrow(data))
+#look at att
+att
+
+#use SpatialPOintsDataFrame() function to add attributes to points
 spdf<-SpatialPointsDataFrame(pts,data=att,proj4string = crdref)
-#str(spdf)#look at structure
+
+
+#look at spdf
 spdf
 #plot(spdf)
 
-#write spdf to a shapefile
+#write spdf to a shapefile using function shapefile () in the raster package
 shapefile(spdf,"myshapefile.shp",overwrite=T)
 
-#read in myshapefile
+#read in myshapefile using the shapefile() function in the raster package
 shp<-shapefile("myshapefile.shp")
 
 #Inspect and check loaded shapefile
 class(shp)#look at class
 head(shp)#look at data
 str(shp)#look at structure
-crs(shp)#look at coordinate reference system
+crs(shp)#look at coordinate reference system - note can be saved to object & applied to other datasets
 plot(shp)#plot shapefile
 
 
+##Convert the shp to data frame
 geo_data<-data.frame(shp)
 
-### sf package
+#look at geo_data
+geo_data
+
+### create spatial class using sf package and geo_data
 sf.pts<-st_as_sf(geo_data, coords = c("coords.x1", "coords.x2"), crs = crs(shp))
 
 #inspect
 sf.pts
 
-#read in sf
+
+#alternatively we could convert directly from sp object
+st_as_sf(shp)
+
+#read .shp with as sf using st_read() function
 nc <- st_read("myshapefile.shp")
 
-#write with sf
+#write  sf to .shp with st_write() function
 st_write(nc, "myshapefile.shp", delete_layer = TRUE)
 
 
 
 #####Raster package
-#define raster 
+#create raster - define columns, rows, and crs 
 r <- raster(ncol=13, nrow=10,crs=crs(shp))
 
 #assign values to raster
@@ -131,5 +163,5 @@ writeRaster(r,"myraster.tif",overwrite=T)
 r2 <- raster("myraster.tif")
 
 #plot raster to inspect
-plot(r2,col=c("black","green"))
+plot(r2,col=c("black","purple"))
 

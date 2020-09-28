@@ -8,7 +8,7 @@ devtools::install_version("velox", version = "0.2.0")
 devtools::install_github("ropensci/FedData")
 
 #then we will install other packages that *are* in the CRAN library
-#***IF IT ASKS TO RESTART R, YOU CAN SAY YES IF YOU'D LIKE TO***
+#***IF IT ASKS TO RESTART R, YOU CAN SAY YES***
 install.packages(c("sp", "sf", "raster", "rgeos", "ggplot2", "dplyr", "units", "rnaturalearth", "rgdal", "ggmap",
                    "move","adehabitatHR","rgbif", "grid"))
 #***RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages>"***

@@ -10,7 +10,7 @@ PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")
 #select "La Tigra-nucleo" in Honduras
 Tigra <- PAs[PAs$NOMBRE=="La Tigra-nucleo",]
 
-#determine area and perimeter
+#determine area 
 st_area(Tigra)
 
 #convert the areas in m2 to km2
@@ -29,7 +29,7 @@ tigra_1km2_grid <- st_make_grid(
   square = TRUE
 )
 
-#determine number of grids (ok, so there are 33)
+#determine number of grids (ok, so there are 106)
 tigra_1km2_grid
 
 #create stratified random points

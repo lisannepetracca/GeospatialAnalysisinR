@@ -1,4 +1,4 @@
-#Let's run through some steps to make sure we are good to go for Friday's workshop
+#Let's run through some steps to make sure we are good to go for the workshop
 #First, let's install some packages
 
 #We will install "devtools" first to get two packages that are not in the CRAN library
@@ -33,8 +33,8 @@ library(FedData)
 #we are ALL GOOD on packages if you do not get any error messages after running these "library" lines
 
 #now we will set our working directory
-#don't forget to keep the \\ syntax in the directory location
-setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R") 
+#don't forget to keep the / syntax in the directory location
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R") 
       #CHANGE DIRECTORY TO WHERE YOUR "Geospatial_Analysis_in_R" FOLDER IS
 
 #and then read in two types of geospatial data

@@ -90,7 +90,7 @@ nrow(BigPAs)
 #We can also adjust our colors to give each PA a different color
 ggplot() + 
   geom_sf(data = BigPAs, aes(color = factor(NOMBRE)), size = 1.5) +
-  labs(color = "NOMBRE") +
+  labs(color = "Name") + #this gives name to legend
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
 #now let's add an outline of honduras, shall we?
@@ -109,7 +109,7 @@ honduras <- countries %>% filter(NAME == "Honduras")
 ggplot() + 
   geom_sf(data = BigPAs, aes(color = factor(NOMBRE)), size = 1.5) +
   geom_sf(data = honduras, fill=NA, size = 1) +
-  labs(color = 'NOMBRE') +
+  labs(color = 'Name') +
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
@@ -302,7 +302,7 @@ PAs$NOMBRE
 PicoBonito <- PAs[PAs$NOMBRE == "Pico Bonito-Zona Nucleo",]
 
 #let's create 100 random points within the PA for vegetation sampling
-random_points <- st_sample (PicoBonito, 100, type="random", exact=T)
+random_points <- st_sample (PicoBonito, 100, type="random")
 
 #what does this look like?
 ggplot() +
@@ -311,7 +311,7 @@ ggplot() +
   ggtitle("100 Random Points in Pico Bonito NP")
 
 #let's try again with 100 regular points
-regular_points <- st_sample (PicoBonito, 100, type="regular", exact=T)
+regular_points <- st_sample (PicoBonito, 100, type="regular")
 
 #what does this look like?
 ggplot() +
@@ -333,7 +333,6 @@ pico_16km2_grid_isect <- st_intersection(pico_16km2_grid, PicoBonito)
 
 #how can we see what this looks like?
 ggplot() +
-  geom_sf(data = PicoBonito, color = "darkgreen",size=1.5) +
   geom_sf(data=pico_16km2_grid_isect, fill=NA, color = "black", size=2)+
   labs(title=expression(paste("16 km" ^{2}," Grid in Pico Bonito NP")))
 
@@ -353,10 +352,10 @@ ggplot() +
   geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
   labs(title=expression(paste("16 km" ^{2}," Hexagon Grid in Pico Bonito NP")))
 
-#I like the way the hexagon grid looks. What if we want to put in two camera traps at 
-#random locations within each hexagon?
+#I like the way the hexagon grid looks. You are welcome to clip it if you'd like
+#What if we want to put in two camera traps at random locations within each hexagon?
 
-random_points <- st_sample(pico_16km2_grid_hex, size=2, type="random", exact=T)
+random_points <- st_sample(pico_16km2_grid_hex, size=2, type="random")
 
 #what does it look like?
 ggplot() +
@@ -373,7 +372,7 @@ pico_16km2_grid_hex
 
 #let's try again, supplying a vector such that it knows to sample 2 points
 #in each of the 63 polygons 
-random_points <- st_sample (pico_16km2_grid_hex, size=rep(2,63), type="random", exact=T)
+random_points <- st_sample (pico_16km2_grid_hex, size=rep(2,63), type="random")
 
 ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +

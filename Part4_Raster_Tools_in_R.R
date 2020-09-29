@@ -362,5 +362,6 @@ plot(elev)
 #(1) merging rasters together
 #(2) basic raster calculations (adding, subtracting)
 #(3) convert polygon to raster
-#(4) calculating proportion of discrete land cover types within polygons (can be grids or
+#(4) calculating more patch, class, and landscape-level metrics a la FRAGSTATS
+#(5) calculating proportion of discrete land cover types within polygons (can be grids or
 #buffers around points)

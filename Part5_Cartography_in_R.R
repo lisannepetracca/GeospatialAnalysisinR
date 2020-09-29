@@ -32,6 +32,7 @@ roads <- st_transform(roads, crs = 32735)
 #and now let's select the roads that intersect Hwange NP
 roads_isect <- roads[HwangeNP,]
 
+#and now let's plot what we have
 ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=roads_isect, color = "black", size=1)+

@@ -151,7 +151,7 @@ elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
 
 #now we can plot as we did for the vector data, but take note of "geom_raster" argument
 ggplot() +
-  geom_raster(data = elev_df , aes(x = x, y = y, fill = elev_Hwange)) +
+  geom_raster(data = elev_df , aes(x = x, y = y, fill = aster_image_20160624)) +
   scale_fill_viridis_c() +
   geom_sf(data = Hwange[1], fill=NA, color="black", size = 1) +
   coord_sf()
@@ -161,7 +161,7 @@ ggplot() +
 #can help you determine if you have wonky values
 #values outside of an expected range can be considered suspect
 ggplot() +
-  geom_histogram(data = elev_df, aes(elev_Hwange), bins=40)
+  geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution

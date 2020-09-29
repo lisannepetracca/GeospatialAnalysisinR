@@ -183,7 +183,8 @@ for (i in 1:length(unique(pandat$species))) {  #running through 1: number of spe
 #    map<-ggmap(bgmaps) +  #call google map in ggmap
 #      geom_point(aes(x = st_coordinates(sub)[,1], y = st_coordinates(sub)[,2]) , #add points from subset data
 #                 data = sub, colour="yellow",alpha = .5)+ #color points yellow, partly transparent
-#      labs(x = 'latitude', y = 'longitude') + ggtitle(paste((sub$species[1]))) #label axis and title
+#      labs(x = 'latitude', y = 'longitude') 
+#      + ggtitle(paste((sub$species[1]))) #label axis and title
 #    plot(map) # plot the map in the R environment
 # #
 # #

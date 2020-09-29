@@ -140,23 +140,12 @@ pandat<-st_as_sf(pandat, coords = c("decimalLongitude" ,"decimalLatitude"), crs 
 #lets look at the data colored by species
 plot(st_geometry(pandat),col=as.factor(pandat$species),pch=16)
 
-#Well that is not a great looking map, lets make better ones using ggmap and google imagery
+#Well that is not a great looking map, lets make better ones using ggplot or ggmap and google imagery
   #and lets make a map for each species 
 
-#First we need to load out google API key
-  #I put my key in a saved file that can be easily referenced
-key<-read.csv("C:/Users/acheesem/Desktop/Mammal Atlas/Data/Google_API.csv")
-register_google(key = key$Key)  #need your google key, will probably need to register for a google API project using static maps https://console.developers.google.com
 
-#load the background map outside the loop if it does not change, center map on mean of pandat coordinates
-bgmaps <- get_map(location=c(lon=mean(st_coordinates(pandat)[,2]), lat=mean(st_coordinates(pandat)[,1])), 
-                  zoom=1, scale=2,maptype="satellite")
+#load global country boundaries shapefile
 world<-st_read("Part 6 Data/world.shp")
-
-
-
-#look through the maps in pdfs or in RStudio
-
 
 for (i in 1:length(unique(pandat$species))) {  #running through 1: number of species
   sub<-pandat[pandat$species==unique(pandat$species)[i],] #for species i, subset pandat to only that species's data
@@ -173,22 +162,36 @@ for (i in 1:length(unique(pandat$species))) {  #running through 1: number of spe
   dev.off() #closing the graphics device for the pdf
 } #close the loop
 
-###PLOT IN GGMAP IF YOU HAVE GOOGLE API KEY
-# #loop over each species in pandat, subset data for that species, then map it and print pdf saved to wd
-# for (i in 1:length(unique(pandat$species))) {  #running through 1: number of species
-#   sub<-pandat[pandat$species==unique(pandat$species)[i],] #for species i, subset pandat to only that species's data
-#   map<-ggmap(bgmaps) +  #call google map in ggmap
-#     geom_point(aes(x = st_coordinates(sub)[,1], y = st_coordinates(sub)[,2]) , #add points from subset data
-#                data = sub, colour="yellow",alpha = .5)+ #color points yellow, partly transparent
-#     labs(x = 'latitude', y = 'longitude') + ggtitle(paste((sub$species[1]))) #label axis and title
-#   plot(map) # plot the map in the R environment
-#   
-#   
-#   pdf(paste(unique(sub$species)[1],Sys.Date(),".pdf",sep=""),height=6,width=6) #print a pdf to your working directory of species i, 
-#   #title it by species i and the date
-#   plot(map) #you are plotting the map in the pdf
-#   dev.off() #closing the graphics device for the pdf
-# } #close the loop
+#look through the maps in pdfs or in RStudio
+
+
+
+# ###PLOT IN GGMAP IF YOU HAVE GOOGLE API KEY
+# 
+# # #First we need to load out google API key
+# # #I put my key in a saved file that can be easily referenced
+#  key<-read.csv("C:/Users/acheesem/Desktop/Mammal Atlas/Data/Google_API.csv")
+#  register_google(key = key$Key)  #need your google key, will probably need to register for a google API project using static maps https://console.developers.google.com
+# #
+# # #load the background map outside the loop if it does not change, center map on mean of pandat coordinates
+#  bgmaps <- get_map(location=c(lon=mean(st_coordinates(pandat)[,2]), lat=mean(st_coordinates(pandat)[,1])),
+#                    zoom=1, scale=2,maptype="satellite")
+# 
+# # #loop over each species in pandat, subset data for that species, then map it and print pdf saved to wd
+#  for (i in 1:length(unique(pandat$species))) {  #running through 1: number of species
+#    sub<-pandat[pandat$species==unique(pandat$species)[i],] #for species i, subset pandat to only that species's data
+#    map<-ggmap(bgmaps) +  #call google map in ggmap
+#      geom_point(aes(x = st_coordinates(sub)[,1], y = st_coordinates(sub)[,2]) , #add points from subset data
+#                 data = sub, colour="yellow",alpha = .5)+ #color points yellow, partly transparent
+#      labs(x = 'latitude', y = 'longitude') + ggtitle(paste((sub$species[1]))) #label axis and title
+#    plot(map) # plot the map in the R environment
+# #
+# #
+#    pdf(paste(unique(sub$species)[1],Sys.Date(),".pdf",sep=""),height=6,width=6) #print a pdf to your working directory of species i,
+#    #title it by species i and the date
+#    plot(map) #you are plotting the map in the pdf
+#    dev.off() #closing the graphics device for the pdf
+#  } #close the loop
 
 #######################################################################################
 ###########################  MOVEBANK #################################################

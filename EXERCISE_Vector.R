@@ -20,9 +20,9 @@ PAs <- st_read("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 Tigra <- PAs[PAs$NOMBRE=="La Tigra-nucleo",]
 
 #determine area 
-st_area(Tigra)
+area_m2 <- st_area(Tigra)
 #convert to km2 & print value
-(area_km2 <- as.numeric(set_units(Tigra$area_m2, km^2)))
+(area_km2 <- as.numeric(set_units(area_m2, km^2)))
 
 #then we will create a 1 km2 grid (1 km x 1 km) over the PA
 tigra_1km2_grid <- st_make_grid(
@@ -33,18 +33,17 @@ tigra_1km2_grid <- st_make_grid(
   square = TRUE
 )
 
-#determine number of grids (ok, so there are 106)
-tigra_1km2_grid
-
 #intersect this grid with the PA
 tigra_1km2_grid_isect <- st_intersection(tigra_1km2_grid, Tigra)
 
+#determine number of grids (there are 106) 
+tigra_1km2_grid_isect
+
 #create stratified random points
-random_points <- st_sample (tigra_1km2_grid_isect, size=rep(2,106), type="random", exact=T)
+random_points <- st_sample (tigra_1km2_grid_isect, size=rep(2,106), type="random")
 
 #plot!
 ggplot() +
-  geom_sf(data = Tigra, color = "purple", size=1.5) +
   geom_sf(data=tigra_1km2_grid_isect, fill=NA, color = "black", size=2)+
   geom_sf(data=random_points, color = "blue", size=2)+
   labs(title="Desired Output")

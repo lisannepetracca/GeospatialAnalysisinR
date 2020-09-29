@@ -96,7 +96,9 @@ NY<-st_read("NYS_Civil_Boundaries_SHP/Counties_Shoreline.shp")#this one is neste
 plot(st_geometry(NY)) 
 ele<-raster("mn30_grd")#DONT PLOT,load raster file-this is for the entire US, LARGE FILE!!
 
-
+#read in from file
+#NY<-st_read("Part 6 Data/NYS_Civil_Boundaries_SHP/Counties_Shoreline.shp")#this one is nested in another folder
+#ele<-raster("Part 6 Data/mn30_grd")
 ###########################################################
 ######################GBIF Exercise ###Map multiple species
 
@@ -121,7 +123,7 @@ write.csv(panthera$data,"panthera_occ.csv")
 #data is in tibble which is a modified data frame- lets change it to data frame to be consistent and store it in pandat
 pandat<-data.frame(panthera$data)
 
-#pandat<-read.csv("panthera_occ.csv") #OR JUST READ IN CSV
+#pandat<-read.csv("Part 6 Data/panthera_occ.csv") #OR JUST READ IN CSV
 
 #look at data
 summary(pandat)
@@ -196,7 +198,7 @@ str(s)#look to see where ID is stored
 marten$individual.local.identifier<-as.factor(s@trackId)
 
 #read in CSV instead of downloading; read next 3 lines
-#m<-read.csv("martendata.csv")#'Martes pennanti LaPoint New York_121719/Martes pennanti LaPoint New York.csv')
+#m<-read.csv("Part 6 Data/martendata.csv")#'Martes pennanti LaPoint New York_121719/Martes pennanti LaPoint New York.csv')
 #marten<-st_as_sf(m, coords = c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
 #marten$individual.local.identifier<-as.factor(marten$individual.local.identifier)
 
@@ -277,7 +279,7 @@ plot(ele.p)
 nlcd<-get_nlcd(template = polygon_from_extent(ext,
   proj4string=paste(crs(marten))), year = 2016, dataset = "Tree_Canopy", label = "Marten Land", force.redo = T)
 
-#nlcd<-raster("nlcd_canopy.tif")#Alternitively load raster from file
+#nlcd<-raster("Part 6 Data/nlcd_canopy.tif")#Alternitively load raster from file
 
 #ignore the warnings abount 'Discarded datum WGS_1984 in CRS definition' if you get it 
 #it relates to recent package PROJ6/GDAL3 updates not being consistent need to download development versiosn to eliminate

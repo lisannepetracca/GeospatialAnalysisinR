@@ -8,8 +8,6 @@ library(sf)
 library(ggplot2)
 library(dplyr)
 library(raster)
-library(ggplot2)
-library(dplyr)
 library(units)
 library(rnaturalearth)
 
@@ -29,6 +27,9 @@ head(PAs)
 #I wonder what the coordinate system is?
 st_crs(PAs)
 
+#a means of getting the most basic info on the coordinate system
+crs(PAs)
+
 #What is our extent?
 st_bbox(PAs) 
 
@@ -47,12 +48,15 @@ ggplot() +
 
 #alternatively
 plot(PAs)
-#this will display just the first attribute
+#however, this will produce a panel for each column in the attribute table
+
+#this line display a single panel, using the first attribute
 plot(PAs[1])
 
 #let's explore the different names of PAs in Honduras
-#this is basically like exploring the values within a certain column
+#first, let's see what the column names are so we know which one to select
 names(PAs)
+#now we can inspect that column
 PAs$NOMBRE
 
 #let's say we want to extract only those PAs that are National Parks (Parque Nacional)
@@ -67,14 +71,15 @@ nrow(NationalParks)
 
 #what if there is a numerical condition? such as, what PAs are >2000 km2?
 #for this we need to calculate geometry
-#let's do area first
+#let's do area 
 PAs$area_m2 <- st_area(PAs)
 
 #these are really big numbers though. to make it km2, try
 PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 
 #if we want to save this super-cool geometry, we can do
-st_write(PAs, "Honduras_PA_areas.csv") 
+#append=F means we will overwrite this .csv if we already run this line of code but want to run it again
+st_write(PAs, "Honduras_PA_areas.csv", append=F) 
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
 #let's use subsetting with brackets again
@@ -91,9 +96,14 @@ ggplot() +
 #now let's add an outline of honduras, shall we?
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
 countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
+#if this line DOES NOT WORK, skip to L. 106, remove the #, and run that line
+
 names(countries)
 #let's grab honduras from this sf object
 honduras <- countries %>% filter(NAME == "Honduras")
+
+#the line to run if ne_download does not work
+# honduras <- st_read("Example_Honduras/Honduras_Border.shp")
 
 #and let's plot!
 ggplot() + 
@@ -124,11 +134,13 @@ PAs_road_isect <- PAs[honduras_roads_UTM,]
 #while the new projection was necessary for the intersection, ggplot2 does not require vector data to be in the 
 #same projection; ggplot automatically converts all objects to the same CRS before plotting
 ggplot() + 
-  geom_sf(data = PAs_road_isect, colour= "darkgreen",size = 1.5) +
+  geom_sf(data = honduras, fill=NA, color="purple",size=1)+
+  geom_sf(data = PAs_road_isect, color= "darkgreen",size = 1.5) +
   geom_sf(data = honduras_roads_UTM, lwd = 1) +
   ggtitle("PAs that intersect roads in Honduras", subtitle = "Subtitle option if you want it!")
 
 #let's do one last thing with these PAs - create centroids and save them as .csv
+#centroids give us the central points of polygon features
 PA_centroids <- st_centroid(PAs)
 #ignore warning message
 #this creates a whole new geometry type (points)
@@ -141,7 +153,7 @@ ggplot() +
   ggtitle("Centroids of PAs in Honduras")
 
 #and then save the centroid coordinates as .csv
-st_write(PA_centroids, "PA_centroids.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(PA_centroids, "PA_centroids.csv", layer_options = "GEOMETRY=AS_XY", append=F)
 
 
 
@@ -150,6 +162,7 @@ st_write(PA_centroids, "PA_centroids.csv", layer_options = "GEOMETRY=AS_XY")
 
 #In this example, we will create buffers of 500 m around a series of camera traps in 
 #Honduras, and then clip those buffers to Honduras land area
+#we may want buffers of 500-m if we are looking to calculate percent canopy cover within that radius
 
 
 #let's import the csv of camera trap locations like any other .csv
@@ -169,6 +182,9 @@ camlocs_sf <- st_as_sf(camlocs, coords =
 #let's make sure the coordinate system is right
 st_crs(camlocs_sf)
 
+#or
+crs(camlocs_sf)
+
 #let's plot the locations to see where they are
 ggplot() +
   geom_sf(data = camlocs_sf) +
@@ -176,9 +192,11 @@ ggplot() +
 
 #now let's save this to a .shp if we want to use it in ArcMap
 st_write(camlocs_sf,
-         "camera_locations.shp", driver = "ESRI Shapefile")
+         "camera_locations.shp", driver = "ESRI Shapefile", append=F)
 
 #let's first get a distance matrix between points
+#we supply the camlocs_sf twice so that we are getting a pairwise distance matrix from each
+#camera to all other cameras, including itself
 head(camlocs_sf)
 dist_matrix <- st_distance(camlocs_sf, camlocs_sf)
 
@@ -208,11 +226,11 @@ ggplot() +
 
 #ok so let's see how this looks when we want to display this polygon over the border of Honduras
 #let's read in a more detailed version of Honduras boundary
-Honduras <- st_read("Example_Honduras/Honduras_Border.shp")
+honduras_detailed <- st_read("Example_Honduras/Honduras_Border.shp")
 
 #let's plot where the camera traps are within the country
 ggplot() +
-  geom_sf(data = Honduras) +
+  geom_sf(data = honduras_detailed) +
   geom_sf(data=cam_convexhull, fill="white", color = "blue", size=2)+
   geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
   geom_sf(data = camlocs_sf) +
@@ -220,45 +238,48 @@ ggplot() +
 
 #i am not happy with this map extent. how can we change it?
 
+#let's get the extent of that convex hull polygon first,
 extent <- st_bbox(cam_convexhull)
+
+#and then supply this extent to the coord_sf argument in ggplot to reduce the extent
 ggplot() +
-  geom_sf(data = Honduras) +
+  geom_sf(data = honduras_detailed) +
   geom_sf(data=cam_convexhull, fill=NA, color = "blue", size=2)+
   geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
   geom_sf(data = camlocs_sf) +
   coord_sf(crs=32616, xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
   ggtitle("Map of Camera Trap Locations")
 
-#if we want a map with meters rather than lat/long, add datum=st_crs(xxxx) argument
+#if we want a map with meters rather than lat/long along the two axes, add datum=st_crs(xxxx) argument
 ggplot() +
-  geom_sf(data = Honduras) +
+  geom_sf(data = honduras_detailed) +
   geom_sf(data=cam_convexhull, fill=NA, color = "blue", size=2)+
   geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
   geom_sf(data = camlocs_sf) +
   coord_sf(datum=st_crs(32616), xlim=c(extent[[1]], extent[[3]]), ylim=c(extent[[2]], extent[[4]]))+
   ggtitle("Map of Camera Trap Locations")
 
-#oh no! the convex hull polygon includes the ocean! how can we crop to the Honduras boundary?
+#oh no! the convex hull polygon includes the ocean! how can we crop to the honduras_detailed boundary?
 
-#first, let's check the Honduras polygon to see what coordinate system is is using
-crs(Honduras)
+#first, let's check the honduras_detailed polygon to see what coordinate system is is using
+crs(honduras_detailed)
 
 #ok, it is NAD 1927 UTM Zone 16N; this is very close to WGS 1984 UTM Zone 16N but isn't exact
 #let's transform the boundary to the same projection as the convex hull polygon
 
-honduras_UTM <- st_transform(Honduras, crs =32616)
+honduras_detailed_UTM <- st_transform(honduras_detailed, crs =32616)
 
 #let's check to make sure the new polygon is in the correct projection
-crs(honduras_UTM)
+crs(honduras_detailed_UTM)
 
-#yay! it worked! now we can proceed with cropping
-cam_convexhull_land <- st_intersection(cam_convexhull, honduras_UTM)
+#yay! it worked! now we can proceed with cropping using st_intersection
+cam_convexhull_land <- st_intersection(cam_convexhull, honduras_detailed_UTM)
 #quick plot
 plot(cam_convexhull_land)
 
 #better plot
 ggplot() +
-  geom_sf(data = honduras_UTM) +
+  geom_sf(data = honduras_detailed_UTM) +
   geom_sf(data=cam_convexhull_land, fill=NA, color = "blue", size=2)+
   geom_sf(data=cam_500m_buffer, fill="red", color = "black")+
   geom_sf(data = camlocs_sf) +
@@ -274,7 +295,7 @@ ggplot() +
 
 
 
-#let's select the PA in Honduras called "Pico Bonito - Zona Nucleo"
+#let's select the PA in honduras_detailed called "Pico Bonito - Zona Nucleo"
 PAs$NOMBRE
 
 #first we will use dplyr package to select the PA by name from the greater multipolygon object
@@ -287,7 +308,7 @@ random_points <- st_sample (PicoBonito, 100, type="random", exact=T)
 ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
   geom_sf(data=random_points, color = "black", size=2)+
-  labs(title=expression(paste("100 Random Points in Pico Bonito NP")))
+  ggtitle("100 Random Points in Pico Bonito NP")
 
 #let's try again with 100 regular points
 regular_points <- st_sample (PicoBonito, 100, type="regular", exact=T)
@@ -296,7 +317,7 @@ regular_points <- st_sample (PicoBonito, 100, type="regular", exact=T)
 ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
   geom_sf(data=regular_points, color = "black", size=2)+
-  labs(title=expression(paste("100 Regular Points in Pico Bonito NP")))
+  ggtitle("100 Regular Points in Pico Bonito NP")
 
 #then we will create a 16 km2 grid (4 km x 4 km) over the PA
 pico_16km2_grid <- st_make_grid(
@@ -355,7 +376,7 @@ ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
   geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
   geom_sf(data=random_points, color = "purple", size=2)+
-  labs(title=expression(paste("Two Random Pts Per Hexagon Cell in Pico Bonito NP")))
+  ggtitle("Two Random Pts Per Hexagon Cell in Pico Bonito NP")
 
 #let's save these points to a .csv
-st_write(random_points, "RandomPoints_PicoBonito.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(random_points, "RandomPoints_PicoBonito.csv", layer_options = "GEOMETRY=AS_XY", append=F)

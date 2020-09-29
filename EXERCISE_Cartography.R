@@ -1,4 +1,8 @@
-setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
+#for this exercise, we will
+#(1) read in the boundary for Hwange NP (Hwange_NP.shp) & distance to waterhole (Dist_Waterhole_Hwange.tif)
+#(2) convert distance to waterhole to a data frame for use in ggplot
+#(3) create ten breaks within the distance to waterhole values
+#(4) plot those ten classes!
 
 library(sf)
 library(raster)
@@ -15,6 +19,7 @@ distwater <- raster("Example_Zimbabwe/Dist_Waterhole_Hwange.tif")
 distwater_df <- as.data.frame(distwater, xy=TRUE)
 
 #check out the name of the column with raster values (this will be the column we supply to cut() )
+#ok, it is called "Dist_Waterhole_Hwange"
 head(distwater_df)
 
 #create ten breaks

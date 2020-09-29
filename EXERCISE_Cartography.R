@@ -1,4 +1,4 @@
-setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 library(sf)
 library(raster)
@@ -6,10 +6,10 @@ library(dplyr)
 library(ggplot2)
 
 #read in Hwange NP 
-Hwange <- st_read("Example_Zimbabwe\\Hwange_NP.shp")
+Hwange <- st_read("Example_Zimbabwe/Hwange_NP.shp")
 
 #read in distance to waterhole
-distwater <- raster("Example_Zimbabwe\\Dist_Waterhole_Hwange.tif")
+distwater <- raster("Example_Zimbabwe/Dist_Waterhole_Hwange.tif")
 
 #convert to data frame for use with ggplot
 distwater_df <- as.data.frame(distwater, xy=TRUE)

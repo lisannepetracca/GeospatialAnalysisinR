@@ -1,7 +1,7 @@
 # ---- VECTOR OPERATIONS ----
 
 #let's set our working directory first
-setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(sf)
@@ -18,7 +18,7 @@ library(rnaturalearth)
 #in this example, we will explore protected areas in Honduras and subset by name and size
 
 #read in the shapefile with st_read
-PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")
+PAs <- st_read("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
 #let's see what the columns of the attribute table are
 names(PAs)
@@ -104,7 +104,7 @@ ggplot() +
 
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
 #read in the shapefile with st_read
-honduras_roads <- st_read("Example_Honduras\\Honduras_Roads_1999_CCAD.shp")
+honduras_roads <- st_read("Example_Honduras/Honduras_Roads_1999_CCAD.shp")
 
 #first, let's use st_length() to see how long these roads are
 honduras_roads$length <- st_length(honduras_roads)
@@ -154,7 +154,7 @@ st_write(PA_centroids, "PA_centroids.csv", layer_options = "GEOMETRY=AS_XY")
 
 #let's import the csv of camera trap locations like any other .csv
 
-camlocs <- read.csv("Example_Honduras\\Camera_Coordinates_JeannetteKawas.csv")
+camlocs <- read.csv("Example_Honduras/Camera_Coordinates_JeannetteKawas.csv")
 
 #let's see what's in this table
 head(camlocs)
@@ -208,7 +208,7 @@ ggplot() +
 
 #ok so let's see how this looks when we want to display this polygon over the border of Honduras
 #let's read in a more detailed version of Honduras boundary
-Honduras <- st_read("Example_Honduras\\Honduras_Border.shp")
+Honduras <- st_read("Example_Honduras/Honduras_Border.shp")
 
 #let's plot where the camera traps are within the country
 ggplot() +

@@ -24,7 +24,7 @@ plot(Hwange[1])
 
 #create random points
 #let's create 100 random points within the PA for vegetation sampling
-Hwange_pts <- st_sample(Hwange, 1000, type="random", exact=T)
+Hwange_pts <- st_sample(Hwange, 1000, type="random")
 
 #what does this look like?
 ggplot() +
@@ -89,7 +89,7 @@ summary(elev, maxsamp = ncell(elev))
 #in that case, will produce a vector where each value is associated with a raster from the stack
 (mean <- cellStats(elev, max))
 
-#here is a fast, simple means of plotting a raster
+#here is a relatively fast, simple means of plotting a raster
 plot(elev)
 
 #what is the coordinate system? 
@@ -121,6 +121,7 @@ elev_vx$crop(cropext)
 elev_crop <- elev_vx$as.RasterLayer(band=1)
 
 #let's see what it looks like now!
+#we will plot with the Hwange boundary in WGS 84
 plot(elev_crop)
 plot(Hwange_WGS[1], border="black",col=NA,lwd=2,add=T)
 
@@ -150,6 +151,8 @@ writeRaster(elev_crop_UTM, "Example_Zimbabwe/elev_Hwange.tif", format="GTiff", o
 elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
 
 #now we can plot as we did for the vector data, but take note of "geom_raster" argument
+#also, note that we are taking the third column of "elev_df" as our color fill
+#as this is the column that has our raster values
 ggplot() +
   geom_raster(data = elev_df , aes(x = x, y = y, fill = elev_df[,3])) +
   scale_fill_viridis_c() +
@@ -206,7 +209,7 @@ crs(percveg)
 plot(percveg)
 #ok, this plot is weird bc we are seeing values >100, which represent various forms of NA
 
-#let's set all values >100 to NA
+#let's set all values >100 to NA and plot it
 percveg[percveg > 100] <- NA
 plot(percveg)
 
@@ -251,7 +254,7 @@ elev <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 stack <- stack(veg_crop, elev)
 #yay, it works now!
 
-#let's say that we'd like to have five categories of percent land cover rather than continuous values
+#a quick aside: let's say that we'd like to have five categories of percent land cover rather than continuous values
 #for example, 0-10 = 1, 10-20 = 2, 20-30 = 3, 30-40 = 4, 40-50 = 5
 #in this case, we need to build a reclassification matrix and then use the reclassify function
 

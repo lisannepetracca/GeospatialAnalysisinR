@@ -7,6 +7,7 @@ library(ggplot2)
 library(dplyr)
 library(raster)
 library(ggmap)
+library(grid)
 
 # ---- LET'S HAVE SOME FUN WITH MAPPING! ----
 
@@ -293,31 +294,41 @@ ggplot() +
 
 ########### MAKING MULTIPLOTS
 
-
-sample_vp_1 <- viewport(x = 0, y = 0, 
+#plotting multiple objects side by side
+  #setting viewports - easiest to set individually in my opinion
+  #here we set 3 x and y are the coordinates of the plot between 0 and 1
+  # where 0, 0 is the lower left corner- width and height go from 0- 1 where
+  # 1 is the width or height of the plot
+sample_vp_1 <- viewport(x = 0, y = 0, #right half of plotting space
                         width =0.5, height = 1,
                         just = c("left", "bottom"))
-sample_vp_2 <- viewport(x = 0.5, y = 0, 
+sample_vp_2 <- viewport(x = 0.5, y = 0, #left half of plotting space
                         width = 0.5, height = 1,
                         just = c("left", "bottom"))
-sample_vp_3 <- viewport(x = 0, y = .8, 
+sample_vp_3 <- viewport(x = 0, y = .8, #bar at top of plotting space
                         width = 1, height = .1,
                         just = c("left", "bottom"))
+#takes some tweaking of corrdinates and size to get right
+dev.off()#clear plots
 
-dev.off()
+#lets check our viewports to see if they look right
+
+#plot a rectangular grob in viewport 1 (left half)
 pushViewport(sample_vp_1)
-grid.draw(rectGrob(gp = gpar(col = "green",lwd=4)))
+grid.draw(rectGrob(gp = gpar(col = "green",lwd=4))) 
 popViewport(1)
 
+#plot a rectangular grob in viewport 2 (right half)
 pushViewport(sample_vp_2)
 grid.draw(rectGrob(gp = gpar(col = "blue",lwd=4)))
 popViewport(1)
 
+#plot a rectangular grob in viewport 3 (top strip)
 pushViewport(sample_vp_3)
 grid.draw(rectGrob(gp = gpar(col = "black",lwd=4)))
 popViewport(1)
 
-
+#lets save some of the maps from earlier as objects map and map2
 map<-ggmap(stamen_watercolor) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE)
@@ -326,23 +337,26 @@ map2<-ggmap(google_satellite) +
   geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
   coord_sf(xlim=c(25,34), ylim=c(-23,-15))
 
-
+#close plots
 dev.off()
+
+#draw map in viewport 1
 pushViewport(sample_vp_1)
 grid.draw(ggplotGrob(map))
 popViewport(1)
 
-
+#draw map 2 in viewport 2
 pushViewport(sample_vp_2)
 grid.draw(ggplotGrob(map2))
 popViewport(1)
 
+#place a heading up top in viewport 3
 pushViewport(sample_vp_3)
 grid.text("Just looking at some maps")
 popViewport(1)
 
-
-
+####what about an inset
+#save the vector/raster map  from earlier as w
 w<-ggplot() +
   geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
   geom_sf(data = HwangeNP, color = "black", fill = NA, size=2) +
@@ -352,13 +366,26 @@ w<-ggplot() +
   theme(axis.title = element_blank())+
   coord_sf()
 
+#clear plotting space
 dev.off()
+
+#plot w across the entire plotting space
 grid.draw(ggplotGrob(w))
+
+#define the size and location of the inset viewport
 md_inset <- viewport(x = 0, y = 0, 
                      just = c("left", "bottom"),
                      width = 0.3, height = 0.32)
+
+#within the viewport paste a backgound rectangle, a border, and map2
+#open the inset viewport
 pushViewport(md_inset)
+#plot semi transparent background rectangle
 grid.draw(rectGrob(gp = gpar(alpha = 0.5, col = "white")))
+#plot map2 in inset viewport
 grid.draw(ggplotGrob(map2))
+#draw border around inset viewport
 grid.draw(rectGrob(gp = gpar(fill = NA, size=2,col = "black")))
+#close viewport
 popViewport()
+

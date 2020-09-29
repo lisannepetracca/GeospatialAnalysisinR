@@ -21,10 +21,15 @@ roads <- st_read("Example_Zimbabwe/ZWE_roads.shp")
 #then our waterholes (point)
 waterholes <- st_read("Example_Zimbabwe/waterholes.shp")
 
-#let's project roads to wGS 1984 UTM Zone 35S to match the others
+#do the coordinate systems match? let's see
+crs(HwangeNP)
+crs(roads)
+crs(waterholes)
+
+#roads do not match. let's project roads to WGS 1984 UTM Zone 35S to match the others
 roads <- st_transform(roads, crs = 32735)
 
-#and now let's clip the roads to Hwange NP
+#and now let's select the roads that intersect Hwange NP
 roads_isect <- roads[HwangeNP,]
 
 ggplot() +
@@ -52,7 +57,7 @@ ggplot() +
 #can see color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
 waterhole_colors <- c("purple", "orange", "deepskyblue3")
 
-#now we basically need to tell ggplot to use these colors
+#now we basically need to tell ggplot to use these colors with "scale_color_manual"
 ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=roads_isect, color = "black", size=1)+
@@ -81,7 +86,6 @@ ggplot() +
 #what if we are interested in plotting multiple shapefiles?
 
 #let's go back to our original map with the polygon, lines, and points
-
 ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=roads_isect, color = "black", size=1)+
@@ -95,8 +99,8 @@ ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=roads_isect, aes(fill = F_CODE_DES), size=1)+
   geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
-  scale_fill_manual(values = "black", name = "")+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
+  scale_fill_manual(values = "black", name = "")+
   ggtitle("Roads and Waterholes in Hwange NP", subtitle = "2020")+
   coord_sf()
 
@@ -115,8 +119,9 @@ ggplot() +
 #And, for a final foray with vector mapping, let's explore different basemaps
 #be sure that you have a 64-bit version of java installed if you are using 64-bit R
 #first, you need to register for an API key here:  https://cloud.google.com/maps-platform/
-#then you need to type in your key in order to enable Google's map services
-register_google(key = "TYPE KEY HERE", write = TRUE)
+#then you need to type in your key below in order to enable Google's map services
+#uncomment the below line when you have an API key
+#register_google(key = "TYPE KEY HERE", write = TRUE)
 
 #once you have registered, you should save your key to a .csv in an easily-accessible place
 #use a single column named "Key" and paste the key underneath
@@ -127,6 +132,10 @@ register_google(key = key$Key)
 #country boundaries from https://gadm.org/
 #yet another means of getting country boundaries
 Zimbabwe <- getData("GADM",country="Zimbabwe",level=0)
+
+#if the above line doesn't work if a server is down, uncomment the below line and read it in
+#Zimbabwe <- st_read("Example_Zimbabwe/Zimbabwe.shp")
+
 #convert to sf object
 Zimbabwe_sf <- st_as_sf(Zimbabwe)
 #plot it
@@ -190,7 +199,7 @@ head(elev_df)
 
 #now we can get started
 #first: what if we wanted to plot elevation in four classes?
-#on the one hand, we can have dplyr determine those breaks 
+#we can have dplyr determine those breaks 
 #give the column name of the raster values to cut (in our case, "elev_Hwange")
 #will distribute the values of the raster into 4 bins
 
@@ -220,6 +229,7 @@ ggplot() +
   geom_raster(data = elev_df_fourgroups_noNA, aes(x = x, y = y, fill = elev_brk)) 
 
 #what if we want these breaks to be manual?
+#all we have to do is give the "cut" function in dplyr a vector of those breaks
 #you do need to start the breaks at the lowest value you want represented (rather than
 #where you want the breaks to be, as in ArcGIS)
 
@@ -229,6 +239,7 @@ elev_df <- elev_df[!is.na(elev_df$elev_Hwange), ]
 #now we can set our breaks
 breaks <- c(800, 900, 1000, 1100, 1200)
 
+#and give those breaks to "cut" function in dplyr
 elev_df_manualbrk <- elev_df %>%
   mutate(elev_brk_manual = cut(elev_Hwange, breaks = breaks))
 
@@ -260,6 +271,7 @@ ggplot() +
   theme(axis.title = element_blank()) 
 
 #cool. how would things look if this were a continuous surface?
+#we are using the viridis color palette for the continuous surface
 ggplot() +
   geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
   scale_fill_viridis_c() +
@@ -278,7 +290,7 @@ ggplot() +
         legend.text = element_text(size = 10), 
         legend.box.background = element_rect(size = 1))
 
-#let's place the elevation raster in a map with Hwange NP and waterholes
+#now let's place the elevation raster in a map with Hwange NP and waterholes
 #order matters!
 #layers that should be on the bottom go first
 #notice that the fill for Hwange is now "NA" so we can see underlying elevation
@@ -290,7 +302,7 @@ ggplot() +
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme(axis.title = element_blank())+
   coord_sf()
-
+#wowzers! that is one excellent-looking map
 
 ########### MAKING MULTIPLOTS
 

@@ -1,5 +1,5 @@
 #let's set our working directory first
-setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(sf)
@@ -15,11 +15,11 @@ library(grid)
 
 #we will return to our Zimbabwe data for the vector mapping
 #first, let's read in our shapefile of Hwange NP (polygon)
-HwangeNP <- st_read("Example_Zimbabwe\\Hwange_NP.shp")
+HwangeNP <- st_read("Example_Zimbabwe/Hwange_NP.shp")
 #then our roads (line)
-roads <- st_read("Example_Zimbabwe\\ZWE_roads.shp")
+roads <- st_read("Example_Zimbabwe/ZWE_roads.shp")
 #then our waterholes (point)
-waterholes <- st_read("Example_Zimbabwe\\waterholes.shp")
+waterholes <- st_read("Example_Zimbabwe/waterholes.shp")
 
 #let's project roads to wGS 1984 UTM Zone 35S to match the others
 roads <- st_transform(roads, crs = 32735)
@@ -120,7 +120,7 @@ register_google(key = "TYPE KEY HERE", write = TRUE)
 
 #once you have registered, you should save your key to a .csv in an easily-accessible place
 #use a single column named "Key" and paste the key underneath
-key<-read.csv("C:\\Users\\lspetrac\\Dropbox\\google_api.csv")
+key<-read.csv("C:/Users/lspetrac/Dropbox/google_api.csv")
 register_google(key = key$Key)
 
 #let's get the bounding box of Zimbabwe
@@ -178,7 +178,7 @@ ggmap(google_hybrid) +
 #let's return to plotting elevation in Hwange NP
 #let's read in that cropped elevation file we already made
 
-elev <- raster("Example_Zimbabwe\\elev_Hwange.tif")
+elev <- raster("Example_Zimbabwe/elev_Hwange.tif")
 
 #and let's see it quickly using the plot function in raster
 plot(elev)

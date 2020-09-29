@@ -1,7 +1,7 @@
 # ---- RASTER TOOLS IN R ----
 
 #let's set our working directory first
-setwd("C:\\Users\\lspetrac\\Desktop\\Geospatial_Analysis_in_R")
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #we have to install one package that didn't make the list
 install.packages("rgeos")
@@ -19,7 +19,7 @@ library(rgeos)
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
 #first, let's read in our shapefile of Hwange NP
-Hwange <- st_read("Example_Zimbabwe\\Hwange_NP.shp")
+Hwange <- st_read("Example_Zimbabwe/Hwange_NP.shp")
 plot(Hwange[c("NAME")])
 #or
 plot(Hwange[1])
@@ -36,8 +36,8 @@ ggplot() +
 
 #now let's bring in our waterholes and roads (again using package sf)
 
-roads <- st_read("Example_Zimbabwe\\ZWE_roads.shp")
-waterholes <- st_read("Example_Zimbabwe\\waterholes.shp")
+roads <- st_read("Example_Zimbabwe/ZWE_roads.shp")
+waterholes <- st_read("Example_Zimbabwe/waterholes.shp")
 
 #let's plot those vectors within Hwange
 ggplot() +
@@ -67,10 +67,10 @@ crs(roads)
 roads_UTM <- st_transform(roads, crs = 32735)
 
 #now, before reading in the elevation data, let's check it out first
-GDALinfo("Example_Zimbabwe\\aster_image_20160624.tif")
+GDALinfo("Example_Zimbabwe/aster_image_20160624.tif")
 
 #now let's read in the elevation (it's an aster image)
-elev <- raster("Example_Zimbabwe\\aster_image_20160624.tif") 
+elev <- raster("Example_Zimbabwe/aster_image_20160624.tif") 
 
 #how can we get an overview of the imported raster?
 elev
@@ -134,7 +134,7 @@ plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 
 #we are going to write this raster to file so we can use it later
 #set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
-writeRaster(elev_crop_UTM, "Example_Zimbabwe\\elev_Hwange.tif", format="GTiff", overwrite=T, NAflag=-9999)
+writeRaster(elev_crop_UTM, "Example_Zimbabwe/elev_Hwange.tif", format="GTiff", overwrite=T, NAflag=-9999)
 
 #what if we wanted to plot in ggplot?
 #it's just a bit trickier bc we have to convert the raster to a data frame first
@@ -171,7 +171,7 @@ ggplot() +
 library(gdalUtils)
 
 #creates a list of the subdatasets within the hdf4 MODIS files 
-subdata <- get_subdatasets("Example_Zimbabwe\\MOD44B.A2016065.h20v10.006.2017081121817.hdf")
+subdata <- get_subdatasets("Example_Zimbabwe/MOD44B.A2016065.h20v10.006.2017081121817.hdf")
 
 #ok, let's see what those subdatasets are
 subdata
@@ -188,7 +188,7 @@ gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
 #BACK TO THE WORKSHOP NOW!
 #let's read in this .tif as a raster
 
-percveg <- raster("Example_Zimbabwe\\PercVegCover_2016.tif")
+percveg <- raster("Example_Zimbabwe/PercVegCover_2016.tif")
 crs(percveg)
 #it gives an error ab the coordinate system but this crs is correct
 #modis uses a sinusoidal coordinate system that can be found here:

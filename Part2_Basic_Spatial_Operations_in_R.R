@@ -137,7 +137,7 @@ st_as_sf(shp)
 nc <- st_read("myshapefile.shp")
 
 #write  sf to .shp with st_write() function
-st_write(nc, "myshapefile.shp", delete_layer = TRUE)
+st_write(nc, "myshapefile.shp", append=F)
 
 
 

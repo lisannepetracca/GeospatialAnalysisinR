@@ -328,10 +328,13 @@ pico_16km2_grid <- st_make_grid(
   square = TRUE
 )
 
+#let's clip this grid to the boundary of Pico Bonito if we aren't interested in the area outside
+pico_16km2_grid_isect <- st_intersection(pico_16km2_grid, PicoBonito)
+
 #how can we see what this looks like?
 ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen",size=1.5) +
-  geom_sf(data=pico_16km2_grid, fill=NA, color = "black", size=2)+
+  geom_sf(data=pico_16km2_grid_isect, fill=NA, color = "black", size=2)+
   labs(title=expression(paste("16 km" ^{2}," Grid in Pico Bonito NP")))
 
 #what if we wanted to do hexagons instead?
@@ -359,7 +362,7 @@ random_points <- st_sample(pico_16km2_grid_hex, size=2, type="random", exact=T)
 ggplot() +
   geom_sf(data = PicoBonito, color = "darkgreen", size=1.5) +
   geom_sf(data=pico_16km2_grid_hex, fill=NA, color = "darkblue", size=2)+
-  geom_sf(data=random_points, color = "black", size=2)+
+  geom_sf(data=random_points, color = "red", size=2)+
   labs(title=expression(paste("16 km" ^{2}," Hexagon Grid in Pico Bonito NP")))
 
 #oh no. what happened? we only have two points for the whole entire grid

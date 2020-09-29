@@ -3,9 +3,6 @@
 #let's set our working directory first
 setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
-#we have to install one package that didn't make the list
-install.packages("rgeos")
-
 #let's load all the libraries we need
 library(sf)
 library(ggplot2)
@@ -20,6 +17,7 @@ library(rgeos)
 
 #first, let's read in our shapefile of Hwange NP
 Hwange <- st_read("Example_Zimbabwe/Hwange_NP.shp")
+#and do a simple plot
 plot(Hwange[c("NAME")])
 #or
 plot(Hwange[1])
@@ -32,7 +30,7 @@ Hwange_pts <- st_sample(Hwange, 1000, type="random", exact=T)
 ggplot() +
   geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
   geom_sf(data=Hwange_pts, color = "black", size=2)+
-  labs(title=expression(paste("1000 Random Points in Hwange NP")))
+  ggtitle("1000 Random Points in Hwange NP")
 
 #now let's bring in our waterholes and roads (again using package sf)
 
@@ -44,29 +42,31 @@ ggplot() +
   geom_sf(data = Hwange, color = "darkgreen", size=1.5) +
   geom_sf(data=roads, color = "black", size=1)+
   geom_sf(data=waterholes, color= "blue", size=3)+
-  labs(title=expression(paste("Roads and Waterholes in Hwange NP")))
+  ggtitle("Roads and Waterholes in Hwange NP")
 
 #man, this map looks terrible. how can we change the extent?
 
 #first, let's get the bounding box for the park
 park_extent <- st_bbox(Hwange)
 
-#now we can add this to our map using coord_sf
+#now we can provide these bounding box coordinates to coord_sf
 #here, our coordinate system is WGS 1984 UTM Zone 35S (EPSG 32735)
 ggplot() +
-  geom_sf(data = Hwange, color = "green", fill = "white", size=2) +
+  geom_sf(data = Hwange, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=roads, color = "black", size=1)+
   geom_sf(data=waterholes, color= "blue", size=3)+
-  labs(title=expression(paste("Roads and Waterholes in Hwange NP")))+
+  ggtitle("Roads and Waterholes in Hwange NP")+
   coord_sf(crs=32735, xlim=c(park_extent[[1]], park_extent[[3]]), ylim=c(park_extent[[2]], park_extent[[4]]))
 
 #that's better!
 
-#checking the coordinate systems reveals our "roads" layer is WGS 1984. How can we convert to WGS 1984 UTM Zone 35S?
+#checking the coordinate systems reveals our "roads" layer is WGS 1984. 
 crs(roads)
+#How can we convert to WGS 1984 UTM Zone 35S?
 roads_UTM <- st_transform(roads, crs = 32735)
 
 #now, before reading in the elevation data, let's check it out first
+#it's ok if you get an error that "statistics are not supported by this driver"
 GDALinfo("Example_Zimbabwe/aster_image_20160624.tif")
 
 #now let's read in the elevation (it's an aster image)
@@ -87,31 +87,37 @@ summary(elev, maxsamp = ncell(elev))
 #what if we want the mean of the whole raster?
 #cellStats can also be used on a raster stack (something we will cover later)
 #in that case, will produce a vector where each value is associated with a raster from the stack
-mean <- cellStats(elev, max)
+(mean <- cellStats(elev, max))
 
 #here is a fast, simple means of plotting a raster
 plot(elev)
 
 #what is the coordinate system? 
 crs(elev)
+#it's WGS84
 
 #let's add Hwange to the elevation tile (Hwange border needs to be converted to WGS84 first)
+#normally I like projecting layers to the same projected coordinate system (esp when working with distances
+#and/or areas), but in this instance I will convert the Hwange boundary to WGS because it is faster
+#and we are just doing a quick visualization
 Hwange_WGS <- st_transform(Hwange, crs=4326)
 plot(Hwange_WGS[1], add=T)
 
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's use package velox to make raster processing a bit faster
+
 #we'll crop to hwange extent to make things like reprojecting go faster
-#then we'll proceed with the extent for Hwange_WGS 
+#we'll get the extent first
 extent(Hwange_WGS)
-#this line creates an object from the four numbers within the extent of Hwange_WGS
+#this line creates a vector from the four numbers within the extent of Hwange_WGS
 cropext <- c(extent(Hwange_WGS)[1:4])
 
-#this makes elev a VeloxRaster object
+#in order to crop a raster, we need to run through a series of steps
+#first, we make elev a VeloxRaster object
 elev_vx <- velox(elev)
-#performs crop
+#then we do the crop
 elev_vx$crop(cropext)
-#converting VeloxRaster object to Raster object
+#then we convert VeloxRaster object to Raster object
 elev_crop <- elev_vx$as.RasterLayer(band=1)
 
 #let's see what it looks like now!
@@ -120,13 +126,16 @@ plot(Hwange_WGS[1], border="black",col=NA,lwd=2,add=T)
 
 #what's the coordinate system of the elevation raster again?
 crs(elev_crop)
+#it's WGS 84
 
-#oh man, this crs (WGS 1984) doesn't match the other layers (which are in WGS 1984 UTM Zone 10N)
+#now that the raster is of smaller size, we can convert this to a projected coordinate system
+#to match the vector data
 #let's project using projectRaster
 #we need to present our crs in a slightly different way than we're used to in package sf
 
 #goes really fast! this resolution will match our resolution for percent veg cover
 elev_crop_UTM <- projectRaster(elev_crop, res=250, crs="+init=epsg:32735")
+
 #let's make sure it looks ok with our Hwange shapefile in UTM coordinates
 plot(elev_crop_UTM)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
@@ -138,11 +147,11 @@ writeRaster(elev_crop_UTM, "Example_Zimbabwe/elev_Hwange.tif", format="GTiff", o
 
 #what if we wanted to plot in ggplot?
 #it's just a bit trickier bc we have to convert the raster to a data frame first
-
 elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
+
 #now we can plot as we did for the vector data, but take note of "geom_raster" argument
 ggplot() +
-  geom_raster(data = elev_df , aes(x = x, y = y, fill = aster_image_20160624)) +
+  geom_raster(data = elev_df , aes(x = x, y = y, fill = elev_Hwange)) +
   scale_fill_viridis_c() +
   geom_sf(data = Hwange[1], fill=NA, color="black", size = 1) +
   coord_sf()
@@ -152,8 +161,7 @@ ggplot() +
 #can help you determine if you have wonky values
 #values outside of an expected range can be considered suspect
 ggplot() +
-  geom_histogram(data = elev_df, aes(aster_image_20160624), bins=40)
-
+  geom_histogram(data = elev_df, aes(elev_Hwange), bins=40)
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
@@ -168,22 +176,23 @@ ggplot() +
 #an .hdf4 file after downloading GDAL (with hdf4 support) through this link:
 #https://trac.osgeo.org/osgeo4w/
 
-library(gdalUtils)
+#Please uncomment the below (L. xx-xx) to see how this would work in GDAL
 
-#creates a list of the subdatasets within the hdf4 MODIS files 
-subdata <- get_subdatasets("Example_Zimbabwe/MOD44B.A2016065.h20v10.006.2017081121817.hdf")
-
-#ok, let's see what those subdatasets are
-subdata
-subdata[1]
-
-#i am only interested in percent tree cover, which is the first subdataset
-#now let's use GDAL to convert to a tif!
-#this is the .tif that we will use in the workshop
-
-gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
+# library(gdalUtils)
+# 
+# #creates a list of the subdatasets within the hdf4 MODIS files 
+# subdata <- get_subdatasets("Example_Zimbabwe/MOD44B.A2016065.h20v10.006.2017081121817.hdf")
+# 
+# #ok, let's see what those subdatasets are
+# subdata
+# subdata[1]
+# 
+# #i am only interested in percent tree cover, which is the first subdataset
+# #now let's use GDAL to convert to a tif!
+# #this is the .tif that we will use in the workshop
+# 
+# gdal_translate(subdata[1], dst_dataset = "PercVegCover_2016.tif")
 ###### END OF GDAL SECTION THAT IS NOT PART OF WORKSHOP ######
-
 
 #BACK TO THE WORKSHOP NOW!
 #let's read in this .tif as a raster
@@ -195,13 +204,15 @@ crs(percveg)
 #https://spatialreference.org/ref/sr-org/modis-sinusoidal/
 
 plot(percveg)
+#ok, this plot is weird bc we are seeing values >100, which represent various forms of NA
 
 #let's set all values >100 to NA
 percveg[percveg > 100] <- NA
 plot(percveg)
 
 #ok so now we have to reproject to WGS 1984 UTM Zone 35S, like the other layers
-#no use cropping here because the resolution is coarser (250 m)
+#normally i would crop first before projecting, but the resolution here is quite coarse (250 m)
+#so it shouldn't take too long
 
 #takes ~1 minute
 percveg_UTM_S <- projectRaster(percveg, res=250, crs="+init=epsg:32735")
@@ -210,13 +221,13 @@ percveg_UTM_S <- projectRaster(percveg, res=250, crs="+init=epsg:32735")
 plot(percveg_UTM_S)
 plot(Hwange[1], border="black",col=NA, lwd=2,add=T)
 
-#let's crop so it looks nice
+#let's crop it now, to get rid of the raster we don't need
 #using the same steps we used earlier in this exercise
 #get the extent for Hwange
 cropext <- c(extent(Hwange)[1:4]) 
-#convert to VeloxRaster
+#convert to VeloxRaster 
 veg_vx <- velox(percveg_UTM_S)
-#perform cropping
+#perform cropping using the provided extent
 veg_vx$crop(cropext)
 #convert to Raster object
 veg_crop <- veg_vx$as.RasterLayer(band=1)
@@ -233,9 +244,12 @@ stack <- stack(veg_crop, elev_crop_UTM)
 extent(veg_crop)
 extent(elev_crop_UTM)
 
-#we will need to realign extents here through resampling
+#the extents are slightly different here, even though they are the same resolution
+#this could be from pixels having a different lower left origin, for instance
+#we will need to realign extents here through the resample tool
 elev <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 stack <- stack(veg_crop, elev)
+#yay, it works now!
 
 #let's say that we'd like to have five categories of percent land cover rather than continuous values
 #for example, 0-10 = 1, 10-20 = 2, 20-30 = 3, 30-40 = 4, 40-50 = 5
@@ -260,20 +274,22 @@ plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 #first, let's clip roads to hwange extent
 roads_hwange <- st_intersection(roads_UTM, Hwange)
 #ignore the warning message. we are ok.
+#let's plot the roads
 plot(roads_hwange[1])
 
-#for distance to linear features (roads), let's use rgeos and gDistance function
-
-#create empty raster such that we can *eventually* store our distances there
+#for distance to linear features (roads), let's use rgeos package and its gDistance function
+#the steps may seem convoluted, but they get the job done
+#first, we create empty raster of a certain resolution & extent such that we can *eventually* store our distances there
 dist_road <-  raster(extent(veg_reclass), res=250, crs="+init=epsg:32735")
 #need to make roads a spatial object in package sp
 roads_sp <- as(roads_hwange,"Spatial")
 #let's see what they look like
 plot(roads_sp)
 #now we'll use gDistance to calculate the distance between the given geometries
-#takes ~ 1 min
+#here, it is taking the distance from each road to all the pixels in the extent
+#takes ~ 1 min+
 distroad_matrix <- gDistance(as(dist_road,"SpatialPoints"), roads_sp,  byid=T)
-#that warning message is really weird because they have the same proj4 strings--- so just ignore
+#that warning message is weird because the layers have the same proj4 strings--- so just ignore
 #with these dimensions, we can see that each raster cell has a distance value to each of the 107 road features
 #each row is a road, and each column is a distance to each of the 432165 raster cells
 dim(distroad_matrix) 
@@ -286,10 +302,10 @@ dist_road[] <- distroad_min
 plot(dist_road)
 plot(roads_hwange[1], col="black",lwd=2,add=T)
 
-#now let's do it for points in package raster
+#now let's calculate distance from points in package raster
 #creating another empty raster
 s <- raster(extent(veg_reclass), res=250, crs="+init=epsg:32735")
-#calculating distance from points (waterholes)
+#calculating distance from points (waterholes) using "distanceFromPoints" function
 dist_waterhole <- distanceFromPoints(s, st_coordinates(waterholes))
 #plotting the output
 plot(dist_waterhole)
@@ -326,7 +342,7 @@ Hwange_pts_sp <- as(Hwange_pts,"Spatial")
 #df=T just means we are returning the output as a data frame (otherwise will return a list)
 #a note that this doesn't have to be used with just points; can be used with polygons (e.g. buffers) too - in that case,
 #extract() will extract all of the pixels within those polygons
-#you may want to add a "fun = mean" or some other operation to summarize the pixel values for each polygon
+#you may want to add a "FUN = mean" or some other operation to summarize the pixel values for each polygon
 values <- extract(stack, Hwange_pts_sp, df=T)
 #let's write this to .csv!
 write.csv(values, "extracted_raster_values.csv")

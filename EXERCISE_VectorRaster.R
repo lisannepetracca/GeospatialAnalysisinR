@@ -19,7 +19,7 @@ area_km2 <- as.numeric(set_units(area_m2, km^2))
 (area_km2)
 
 #let's generate 100 random pts within the park
-random_points <- st_sample(Hwange, size=100, type="random", exact=T)
+random_points <- st_sample(Hwange, size=100, type="random")
 
 #read in elevation & check out CRS
 elev <- raster("Example_Zimbabwe/elev_Hwange.tif")

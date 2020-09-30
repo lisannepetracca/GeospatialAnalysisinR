@@ -1,3 +1,6 @@
+#let's set our working directory first
+setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
+
 #for this exercise, we will
 #(1) read in the boundary for Hwange NP (Hwange_NP.shp) & distance to waterhole (Dist_Waterhole_Hwange.tif)
 #(2) convert distance to waterhole to a data frame for use in ggplot

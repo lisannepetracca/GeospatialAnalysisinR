@@ -24,7 +24,7 @@ head(distwater_df)
 
 #create ten breaks
 distwater_df_10groups <- distwater_df %>%
-  mutate(distwater_brk = cut(Dist_Waterhole_Hwange, breaks = 10))
+  mutate(distwater_brk = cut(distwater_df[,3], breaks = 10))
 
 #how many pixels fall into each group?
 distwater_df_10groups %>%

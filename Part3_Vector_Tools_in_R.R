@@ -100,7 +100,7 @@ countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
 
 names(countries)
 #let's grab honduras from this sf object
-honduras <- countries %>% filter(NAME == "Honduras")
+honduras <- countries[countries$NAME == "Honduras",]
 
 #the line to run if ne_download does not work
 # honduras <- st_read("Example_Honduras/Honduras_Border.shp")

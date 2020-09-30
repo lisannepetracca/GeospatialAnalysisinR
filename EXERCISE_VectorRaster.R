@@ -1,3 +1,12 @@
+#for this exercise, we will
+#(1) determine the area of Hwange NP in sq km
+#(2) create 100 random points within Hwange NP
+#(3) use "resample" to align distance to waterhole (Dist_Waterhole_Hwange.tif)
+#    and elevation (elev_Hwange.tif)
+#(4) create raster stack from these two rasters
+#(5) extract mean values from raster stack for 1000-m buffers around the 100 random points
+#(6) save as .csv
+
 setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 library(sf)
@@ -47,7 +56,7 @@ random_pts_sp <- as(random_points,"Spatial")
 #let's extract mean values for elevation and distance to waterhole for these buffers
 #note that you do not use a "method" argument here, only a "FUN" argument to take the mean
 raster_values <- extract(stack, random_pts_sp, buffer=1000,
-                         FUN = mean, df=T)
+                         fun = mean, df=T)
 
 #write these values to a .csv
 write.csv(raster_values, "elev_distwater_hwange.csv")

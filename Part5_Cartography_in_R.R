@@ -50,9 +50,9 @@ unique(waterholes$TYPE)
 ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
-  labs(color = 'Waterhole type')+
-  ggtitle("Waterhole types in Hwange NP", subtitle = "2020")+
-  coord_sf()
+  labs(color = 'Waterhole type')e
+  ggtitle("Waterhole types in Hwange NP", subtitle = "2020")
+  
 
 #what if we don't like these colors? how can we change them?
 #can see color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
@@ -205,7 +205,7 @@ head(elev_df)
 #will distribute the values of the raster into 4 bins
 
 elev_df_fourgroups <- elev_df %>%
-  mutate(elev_brk = cut(elev_Hwange, breaks = 4))
+  mutate(elev_brk = cut(elev_df[,3], breaks = 4))
 
 #you can then see how many pixels fall into each group
 elev_df_fourgroups %>%
@@ -215,7 +215,7 @@ elev_df_fourgroups %>%
 #man, we have NA values. where are they? 
 #we can use "na.value = "color"" to show where those pixels are
 ggplot() +
-  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_Hwange)) +
+  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_brk)) +
   scale_fill_viridis_c(na.value = 'red') 
 
 #ok, they are some border cells
@@ -242,7 +242,7 @@ breaks <- c(800, 900, 1000, 1100, 1200)
 
 #and give those breaks to "cut" function in dplyr
 elev_df_manualbrk <- elev_df %>%
-  mutate(elev_brk_manual = cut(elev_Hwange, breaks = breaks))
+  mutate(elev_brk_manual = cut(elev_df[,3], breaks = breaks))
 
 #how many pixels fall into each group?
 #you can then see how many pixels fall into each group
@@ -274,7 +274,7 @@ ggplot() +
 #cool. how would things look if this were a continuous surface?
 #we are using the viridis color palette for the continuous surface
 ggplot() +
-  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_df[,3])) +
   scale_fill_viridis_c() +
   theme(axis.title = element_blank())
 
@@ -283,7 +283,7 @@ ggplot() +
 #move legend theme to bottom
 #adjust size of legend name and labels
 ggplot() +
-  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_df[,3])) +
   scale_fill_viridis_c(name = "Elevation (m)") +
   theme(axis.title = element_blank(),
         legend.position = "bottom",
@@ -296,7 +296,7 @@ ggplot() +
 #layers that should be on the bottom go first
 #notice that the fill for Hwange is now "NA" so we can see underlying elevation
 ggplot() +
-  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_df[,3])) +
   geom_sf(data = HwangeNP, color = "black", fill = NA, size=2) +
   geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
   scale_fill_viridis_c(name = "Elevation (m)")+
@@ -371,7 +371,7 @@ popViewport(1)
 ####what about an inset
 #save the vector/raster map  from earlier as w
 w<-ggplot() +
-  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_Hwange)) +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill=elev_df[,3])) +
   geom_sf(data = HwangeNP, color = "black", fill = NA, size=2) +
   geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
   scale_fill_viridis_c(name = "Elevation (m)")+

@@ -87,7 +87,7 @@ summary(elev, maxsamp = ncell(elev))
 #what if we want the mean of the whole raster?
 #cellStats can also be used on a raster stack (something we will cover later)
 #in that case, will produce a vector where each value is associated with a raster from the stack
-(mean <- cellStats(elev, max))
+(mean <- cellStats(elev, mean))
 
 #here is a relatively fast, simple means of plotting a raster
 plot(elev)

@@ -23,7 +23,7 @@ plot(Hwange[c("NAME")])
 plot(Hwange[1])
 
 #create random points
-#let's create 100 random points within the PA for vegetation sampling
+#let's create 1000 random points within the PA for vegetation sampling
 Hwange_pts <- st_sample(Hwange, 1000, type="random")
 
 #what does this look like?
@@ -66,7 +66,7 @@ crs(roads)
 roads_UTM <- st_transform(roads, crs = 32735)
 
 #now, before reading in the elevation data, let's check it out first
-#it's ok if you get an error that "statistics are not supported by this driver"
+#IGNORE WARNING that "statistics are not supported by this driver"
 GDALinfo("Example_Zimbabwe/aster_image_20160624.tif")
 
 #now let's read in the elevation (it's an aster image)
@@ -78,7 +78,7 @@ elev
 #this is great, but can we get more stats beyond min/max?
 #how can we get, say, quartiles of the data?
 #turns out it's the same for any vector or data frame column in R
-summary(elev)
+summary(elev)    #WARNING MESSAGE IS OK
 
 #if you want it to use ALL the values in the dataset, use
 summary(elev, maxsamp = ncell(elev))
@@ -164,7 +164,7 @@ ggplot() +
 #can help you determine if you have wonky values
 #values outside of an expected range can be considered suspect
 ggplot() +
-  geom_histogram(data = elev_df, aes(elev_df[,3]), bins=40)
+  geom_histogram(data = elev_df, aes(elev_df[,3]), bins=40)  #IGNORE WARNING
 
 #now let's read in our MODIS data
 #we are using the 44B product, or Vegetation Continuous Fields; 250-m resolution
@@ -202,7 +202,7 @@ ggplot() +
 
 percveg <- raster("Example_Zimbabwe/PercVegCover_2016.tif")
 crs(percveg)
-#it gives an error ab the coordinate system but this crs is correct
+#IGNORE WARNING - this crs is correct
 #modis uses a sinusoidal coordinate system that can be found here:
 #https://spatialreference.org/ref/sr-org/modis-sinusoidal/
 
@@ -241,7 +241,7 @@ plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 
 #let's try to make a raster stack of vegetation and elevation
 stack <- stack(veg_crop, elev_crop_UTM)
-#nooooo, we get an error ab different extents!
+#ERROR ab different extents!
 #let's check out the extents of each
 
 extent(veg_crop)
@@ -276,7 +276,7 @@ plot(Hwange[1], border="black",col=NA,lwd=2,add=T)
 #let's move on to getting distances from roads and waterholes
 #first, let's clip roads to hwange extent
 roads_hwange <- st_intersection(roads_UTM, Hwange)
-#ignore the warning message. we are ok.
+#IGNORE WARNING
 #let's plot the roads
 plot(roads_hwange[1])
 
@@ -292,7 +292,7 @@ plot(roads_sp)
 #here, it is taking the distance from each road to all the pixels in the extent
 #takes ~ 1 min+
 distroad_matrix <- gDistance(as(dist_road,"SpatialPoints"), roads_sp,  byid=T)
-#that warning message is weird because the layers have the same proj4 strings--- so just ignore
+#IGNORE WARNING - the layers have the same proj4 strings
 #with these dimensions, we can see that each raster cell has a distance value to each of the 107 road features
 #each row is a road, and each column is a distance to each of the 432165 raster cells
 dim(distroad_matrix) 

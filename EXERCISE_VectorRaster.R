@@ -23,9 +23,7 @@ crs(Hwange)
 
 area_m2 <- st_area(Hwange)
 #convert to km2
-area_km2 <- as.numeric(set_units(area_m2, km^2))
-#print the area
-(area_km2)
+(area_km2 <- as.numeric(set_units(area_m2, km^2)))
 
 #let's generate 100 random pts within the park
 random_points <- st_sample(Hwange, size=100, type="random")
@@ -54,9 +52,8 @@ stack <- stack(elev, distwater_align)
 random_pts_sp <- as(random_points,"Spatial")
 
 #let's extract mean values for elevation and distance to waterhole for these buffers
-#note that you do not use a "method" argument here, only a "FUN" argument to take the mean
-raster_values <- extract(stack, random_pts_sp, buffer=1000,
-                         fun = mean, df=T)
+#note that you do not use a "method" argument here, only a "fun" argument to take the mean
+raster_values <- extract(stack, random_pts_sp, buffer=1000, fun = mean, df=T)
 
 #write these values to a .csv
 write.csv(raster_values, "elev_distwater_hwange.csv")

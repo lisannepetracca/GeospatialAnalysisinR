@@ -50,7 +50,7 @@ unique(waterholes$TYPE)
 ggplot() +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = "white", size=2) +
   geom_sf(data=waterholes, aes(color=factor(TYPE)), size=3)+
-  labs(color = 'Waterhole type')e
+  labs(color = 'Waterhole type')+
   ggtitle("Waterhole types in Hwange NP", subtitle = "2020")
   
 
@@ -167,21 +167,21 @@ google_hybrid <- get_googlemap(center = c(29.5, -19),
 ggmap(stamen_watercolor) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE)+
-  ggtitle("Source = 'stamen', type= 'watercolor'")
+  ggtitle("Source = 'stamen', type= 'watercolor'")  #IGNORE WARNING
 ggmap(stamen_terrain) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
   geom_sf(data = HwangeNP, color = "darkgreen", fill = NA, size=1, inherit.aes = FALSE) +
-  ggtitle("Source = 'stamen', type= 'terrain'")
+  ggtitle("Source = 'stamen', type= 'terrain'")     #IGNORE WARNING
 ggmap(google_satellite) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
   geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
   coord_sf(xlim=c(25,34), ylim=c(-23,-15))+
-  ggtitle("Source = 'google', type= 'satellite'")
+  ggtitle("Source = 'google', type= 'satellite'")   #IGNORE WARNING
 ggmap(google_hybrid) +
   geom_sf(data = Zimbabwe_sf, color = "black", fill = NA, size=2, inherit.aes = FALSE) +
   geom_sf(data = HwangeNP, color = "white", fill = NA, size=1, inherit.aes = FALSE) +
   coord_sf(xlim=c(25,34), ylim=c(-23,-15))+
-  ggtitle("Source = 'google', type= 'hybrid'")
+  ggtitle("Source = 'google', type= 'hybrid'")      #IGNORE WARNING
 
 #### ---- INCLUDING RASTER DATA ----####
 
@@ -196,7 +196,7 @@ plot(elev)
 #to plot a raster in ggplot, remember that we need to convert it to a data frame first
 elev_df <- as.data.frame(elev, xy=TRUE)
 #see what the data frame looks like
-head(elev_df)
+head(elev_df)   #IT IS OK THAT THERE ARE NAs
 
 #now we can get started
 #first: what if we wanted to plot elevation in four classes?
@@ -215,7 +215,7 @@ elev_df_fourgroups %>%
 #man, we have NA values. where are they? 
 #we can use "na.value = "color"" to show where those pixels are
 ggplot() +
-  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_brk)) +
+  geom_raster(data = elev_df_fourgroups , aes(x = x, y = y, fill = elev_df_fourgroups[,3])) +
   scale_fill_viridis_c(na.value = 'red') 
 
 #ok, they are some border cells
@@ -224,7 +224,7 @@ ggplot() +
 
 #one trick of getting around NAs is removing those rows where the raster value is NA
 #otherwise NA will show up in the legend & this is annoying
-elev_df_fourgroups_noNA <- elev_df_fourgroups[!is.na(elev_df_fourgroups$elev_Hwange), ]
+elev_df_fourgroups_noNA <- elev_df_fourgroups[!is.na(elev_df_fourgroups[,3]), ]
 
 ggplot() +
   geom_raster(data = elev_df_fourgroups_noNA, aes(x = x, y = y, fill = elev_brk)) 
@@ -235,7 +235,7 @@ ggplot() +
 #where you want the breaks to be, as in ArcGIS)
 
 #let's get rid of NA values in main elev_df
-elev_df <- elev_df[!is.na(elev_df$elev_Hwange), ]
+elev_df <- elev_df[!is.na(elev_df[,3]), ]
 
 #now we can set our breaks
 breaks <- c(800, 900, 1000, 1100, 1200)

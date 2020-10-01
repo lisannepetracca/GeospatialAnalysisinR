@@ -78,7 +78,7 @@ PAs$area_m2 <- st_area(PAs)
 PAs$area_km2 <- as.numeric(set_units(PAs$area_m2, km^2))
 
 #if we want to save this super-cool geometry, we can do
-#append=F means we will overwrite this .csv if we already run this line of code but want to run it again
+#append=F means we will overwrite this .csv if we already ran this line of code but want to run it again
 st_write(PAs, "Honduras_PA_areas.csv", append=F) 
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
@@ -123,7 +123,7 @@ head(honduras_roads)
 #let's see what happens if we try to intersect them
 PAs_road_isect <- PAs[honduras_roads,]
 
-#oh man! coordinate systems aren't the same. we need to project the roads to the same coord system
+#oh man! ERROR! coordinate systems aren't the same. we need to project the roads to the same coord system
 honduras_roads_UTM <- st_transform(honduras_roads, crs =32616)
 #alternatively, we could have used "crs = crs(PAs)" to import the CRS from "PAs"
 
@@ -142,7 +142,7 @@ ggplot() +
 #let's do one last thing with these PAs - create centroids and save them as .csv
 #centroids give us the central points of polygon features
 PA_centroids <- st_centroid(PAs)
-#ignore warning message
+#IGNORE WARNING
 #this creates a whole new geometry type (points)
 
 #let's see what this looks like
@@ -190,9 +190,9 @@ ggplot() +
   geom_sf(data = camlocs_sf) +
   ggtitle("Map of Camera Trap Locations")
 
-#now let's save this to a .shp if we want to use it in ArcMap
+#now let's save this to a .shp if we want to use it in ArcMap 
 st_write(camlocs_sf,
-         "camera_locations.shp", driver = "ESRI Shapefile", append=F)
+         "camera_locations.shp", driver = "ESRI Shapefile", append=F) #IGNORE WARNING
 
 #let's first get a distance matrix between points
 #we supply the camlocs_sf twice so that we are getting a pairwise distance matrix from each
@@ -274,7 +274,7 @@ crs(honduras_detailed_UTM)
 
 #yay! it worked! now we can proceed with cropping using st_intersection
 cam_convexhull_land <- st_intersection(cam_convexhull, honduras_detailed_UTM)
-#quick plot
+#quick plot to see if cropping worked
 plot(cam_convexhull_land)
 
 #better plot
@@ -368,7 +368,7 @@ ggplot() +
 #we need to explicitly tell st_sample to sample within each of the 63 hexagons within the grid
 
 #let's see how many grids we have; yep, there are 63
-pico_16km2_grid_hex
+pico_16km2_grid_hex    #RED TEXT IS OK; DOES NOT MEAN ERROR
 
 #let's try again, supplying a vector such that it knows to sample 2 points
 #in each of the 63 polygons 

@@ -12,7 +12,7 @@ library(adehabitatHR)
 library(rgbif)
 library(ggmap)
 
-
+##DO NOT COPY PASTE ENTIRE LINE FOR 17 NEED 'wd<-' PRESERVED!!!
 #Make sure working directory is also saved as object wd
 wd<-setwd("C:/Users/acheesem/Desktop/ESF/Classes Taught/GIS in R workshop")#Change to your working directory path
 
@@ -196,7 +196,7 @@ for (i in 1:length(unique(pandat$species))) {  #running through 1: number of spe
 
 #######################################################################################
 ###########################  MOVEBANK #################################################
-#Neat, okay lets try GPS movement data from movebank, this is marten data from NY
+#Neat, okay lets try GPS movement data from movebank, this is fisher data from NY
   #we need to first access the Movebank API using the move package, we can use the data
   #repository doi to direclty download open access data using the getDataRepositoryData() function
 
@@ -207,32 +207,32 @@ s
 #its a Movestack 
 
 #lets convert it to a sf so we can work with it
-marten<-st_as_sf(s)
+fisher<-st_as_sf(s)
 
 #look at data
-head(marten)
-str(marten) #note missing individual ID and also timestamp is in the wrong format
+head(fisher)
+str(fisher) #note missing individual ID and also timestamp is in the wrong format
 
 #pull individual ID from MoveStack
 str(s)#look to see where ID is stored
 
 #ID is in trackId slot- to call it we use the @ symbol and store as indivdual.local.identifier
-marten$individual.local.identifier<-as.factor(s@trackId)
+fisher$individual.local.identifier<-as.factor(s@trackId)
 
 #read in CSV instead of downloading; read next 3 lines
-#m<-read.csv("Part 6 Data/martendata.csv")#'Martes pennanti LaPoint New York_121719/Martes pennanti LaPoint New York.csv')
-#marten<-st_as_sf(m, coords = c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
-#marten$individual.local.identifier<-as.factor(marten$individual.local.identifier)
+#m<-read.csv("Part 6 Data/fisherdata.csv")#'Martes pennanti LaPoint New York_121719/Martes pennanti LaPoint New York.csv')
+#fisher<-st_as_sf(m, coords = c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
+#fisher$individual.local.identifier<-as.factor(fisher$individual.local.identifier)
 
 #convert timestamp to date using the as.POSIXct() function
-marten$timestamp<-as.POSIXct(marten$study.local.timestamp)
-str(marten) #check to see it worked
+fisher$timestamp<-as.POSIXct(fisher$study.local.timestamp)
+str(fisher) #check to see it worked
 
 #look at how many points per individual
-table(marten$individual.local.identifier)
+table(fisher$individual.local.identifier)
 
-#look at the marten data to make sure everything looks right
-plot(st_geometry(marten),col=as.factor(marten$individual.local.identifier))
+#look at the fisher data to make sure everything looks right
+plot(st_geometry(fisher),col=as.factor(fisher$individual.local.identifier))
   
 #Excellent! Now er can move on to home ranges
 
@@ -242,31 +242,31 @@ plot(st_geometry(marten),col=as.factor(marten$individual.local.identifier))
   #from sf to sp. This package has some other useful movement statistics - check it out!
 
 #to run home range we need only the individual id and coords in a spatial points class
-marten.drop<-as_Spatial(marten[,"individual.local.identifier"])
+fisher.drop<-as_Spatial(fisher[,"individual.local.identifier"])
 
 
 #lets create a separate file for each individual
 #initalize vector to store names of home range shapefiles
-l<-rep(NA,length(unique(marten.drop$individual.local.identifier)))
+l<-rep(NA,length(unique(fisher.drop$individual.local.identifier)))
 
 #loop through all unique individuals, calculate 95% Minimum convex polygon, rename shapefile by individual, save as shapefile,
   #plot the MCP and add the name of the shapefile to l
-for (i in 1:length(unique(marten.drop$individual.local.identifier))) { #for 1: number of individuals
-  sub<-marten.drop[marten.drop$individual.local.identifier==unique(marten.drop$individual.local.identifier)[i],]
+for (i in 1:length(unique(fisher.drop$individual.local.identifier))) { #for 1: number of individuals
+  sub<-fisher.drop[fisher.drop$individual.local.identifier==unique(fisher.drop$individual.local.identifier)[i],]
     #subset data for that individual
   sub$individual.local.identifier<-droplevels(sub$individual.local.identifier)
     #drop other individul factor levels because it was throwing an error
   mcp<-mcp(sub, percent=95)
     #calculate 95% mcp - for that individual store in object mcp
-  assign(paste("MCP.",unique(marten.drop$individual.local.identifier)[i],sep=""),mcp)
+  assign(paste("MCP.",unique(fisher.drop$individual.local.identifier)[i],sep=""),mcp)
     #rename mcp object as MCP.[individual id] using assign() - I'm a fan of this function
-  shapefile(get(paste("MCP.",unique(marten.drop$individual.local.identifier)[i],sep="")),
-            paste("95p_MCP_",unique(marten.drop$individual.local.identifier)[i],".shp",sep=""),overwrite=TRUE)
+  shapefile(get(paste("MCP.",unique(fisher.drop$individual.local.identifier)[i],sep="")),
+            paste("95p_MCP_",unique(fisher.drop$individual.local.identifier)[i],".shp",sep=""),overwrite=TRUE)
     #write a shapefile for the newly assigned MCP.[individual id] object, name it 95p_MCP_[individual Id]
     #the get() function takes the text and gets the r object with that name
-  print(paste("MCP.",unique(marten.drop$individual.local.identifier)[i],sep=""))
+  print(paste("MCP.",unique(fisher.drop$individual.local.identifier)[i],sep=""))
     #print the MCP.[individual Id] to track progress
-  l[i]<-c(paste("MCP.",unique(marten.drop$individual.local.identifier)[i],sep=""))
+  l[i]<-c(paste("MCP.",unique(fisher.drop$individual.local.identifier)[i],sep=""))
     #store the MCP.[individual.Id] in vector to access later
 }
 #ignore the warning ' In proj4string(xy) : CRS object has comment, which is lost in output' if you get it 
@@ -274,7 +274,7 @@ for (i in 1:length(unique(marten.drop$individual.local.identifier))) { #for 1: n
 
 
 #so we did all that but if we just wanted the home ranges all in one shapfile we could do this
-fast<-(mcp(marten.drop, percent=95))
+fast<-(mcp(fisher.drop, percent=95))
 
 #look at the home ranges
 plot(fast)
@@ -289,7 +289,7 @@ plot(fast)
 
 #set bounding box for downloading & working with rasters as covariates, setting using sp 
   #because we will need it for the raster crop and get_nlcd() function
-ext<-extent(as_Spatial(marten))+c(-0.25,0.25,-0.25,0.25)
+ext<-extent(as_Spatial(fisher))+c(-0.25,0.25,-0.25,0.25)
 
 #lets crop that earlier elevation layer
 ele.p<-crop(ele, ext)
@@ -299,7 +299,7 @@ plot(ele.p)
   #this package is awesome because it crops NLCD as it brings it in otherwise the dataset is HUGE
 
 nlcd<-get_nlcd(template = polygon_from_extent(ext,
-  proj4string=paste(crs(marten))), year = 2016, dataset = "Tree_Canopy", label = "Marten Land", force.redo = T)
+  proj4string=paste(crs(fisher))), year = 2016, dataset = "Tree_Canopy", label = "fisher Land", force.redo = T)
 
 #nlcd<-raster("Part 6 Data/nlcd_canopy.tif")#Alternitively load raster from file
 
@@ -319,10 +319,10 @@ nlcd
 #everything needs to be in the same crs  -  because NLCD is the largest we will transform everything to 
   #the crs of the NLCD layer because this will be faster
 #Transform points to raster CRS 
-marten<-st_transform(marten,crs(nlcd))
+fisher<-st_transform(fisher,crs(nlcd))
 
 #look at them on top of NLCD canopy layer
-plot(st_geometry(marten),add=T,pch=16)
+plot(st_geometry(fisher),add=T,pch=16)
 
 ####Transform home ranges CRS and plot in a loop
 #remember what l is
@@ -342,57 +342,57 @@ for (i in 1 :length(l)){ #for every instance in 1:number of home ranges stored i
 #okay we have our spatial data squared away- now we need to prep our data for RSF - 
   # we have used points, these are our GPS data-lets create a dummy variable 'used' and input a 1 
   #for these data
-#add new column to marte to name used points with 1
-marten$used<-1
+#add new column to fisher to name used points with 1
+fisher$used<-1
 
 #plot the used points
-plot(st_geometry(marten),col=(marten$used)+1,pch=16,cex=0.5)
+plot(st_geometry(fisher),col=(fisher$used)+1,pch=16,cex=0.5)
 
 
-#look at marten
-names(marten)
+#look at fisher
+names(fisher)
 
-#subset marten to just used and individual columns, call it mart
-mart<-marten[,c("used","individual.local.identifier")]
-mart
+#subset fisher to just used and individual columns, call it fish
+fish<-fisher[,c("used","individual.local.identifier")]
+fish
 
 #Okay now we need to compare used to what was available to each individual in their home range
   #loop through each home range and sample as many points as there are points for that individual, 
   #add a column used with the label 0, bind to the used GPS points
 for (i in 1:length(l)){#for 1: number of home ranges
-out <- st_sample(get(l[i]), nrow(marten[marten$individual.local.identifier==
-                unique(marten.drop$individual.local.identifier)[i],]), type="random", exact=T)
+out <- st_sample(get(l[i]), nrow(fisher[fisher$individual.local.identifier==
+                unique(fisher.drop$individual.local.identifier)[i],]), type="random", exact=T)
   #sample X random points from home range i, where X=the number of used points for that individual
-out<-st_sf(individual.local.identifier=unique(marten.drop$individual.local.identifier)[i],used=rep(0,length(out)),geometry=out)
+out<-st_sf(individual.local.identifier=unique(fisher.drop$individual.local.identifier)[i],used=rep(0,length(out)),geometry=out)
   #add a column to out that has the unique id for individual and the dummy variable used, but used =0
-mart<-rbind(mart,out)
+fish<-rbind(fish,out)
   #bind the new available points to the used data and all previously sampled available points
 }
 
 #plot the used and available points
-plot(st_geometry(mart),col=(mart$used)+1,pch=16,cex=0.5)
+plot(st_geometry(fish),col=(fish$used)+1,pch=16,cex=0.5)
 
 #The next step is to extrat covariate values to the points - but we should double check the crs match
 
 #check that coord systems align
-crs(mart)
+crs(fish)
 crs(nlcd)
 crs(ele.p)
 
 #great!!!
 
 #extract raster data to points
-mart$LC<-extract(nlcd,mart)
-mart$ele<-extract(ele.p,mart)
+fish$LC<-extract(nlcd,fish)
+fish$ele<-extract(ele.p,fish)
 
 #run rsf
-model<-glm(used~-1+scale(LC)+scale(ele), data=mart,family='binomial') #takes a few moments to run 
+model<-glm(used~-1+scale(LC)+scale(ele), data=fish,family='binomial') #takes a few moments to run 
 #look at our model summary
 summary(model)
 
 
 
-##Okay thats super cool martens like land cover and avoid higher elevations here but what does that
+##Okay thats super cool fishers like land cover and avoid higher elevations here but what does that
   #look like on the landscape??? To look at suitability across a landscape we need to plug in the  
   #values of each pixel on the landscape to our model and see the suitability - we can do this using 
   #the predict() function if we have those landscape values

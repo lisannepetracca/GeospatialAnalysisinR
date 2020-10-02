@@ -1,7 +1,7 @@
 
 ###Create function to thin points by a certain buffer distance
 thinpoints<-function(points,buffer_dist){
-  require(st)
+  require(sf)
   i=1 #initiate
   repeat( {
     buffer <- st_buffer(points[i,], buffer_dist ) #  create buffer of buffer_dist around i-th point

@@ -1,6 +1,6 @@
 
 ###Create function to thin points by a certain buffer distance
-thinpoints<-function(points,buffer_dist){
+thinpoints<-function(points,buffer_dist){#points sf class
   require(sf)
   i=1 #initiate
   repeat( {
@@ -21,18 +21,7 @@ thinpoints<-function(points,buffer_dist){
   
 points} #save final points as function output
 
-
-#Example of function use
-PAs <- st_read("Example_Honduras\\Honduras_Protected_Areas_2007.shp")#call in shapefiile
-
-PicoBonito <- PAs[PAs$NOMBRE == "Pico Bonito-Zona Nucleo",] #subest to only Pico bonito
-PicoBonito <- PAs[1,] #remove weird NAs that popped up
-
-
-random_points <- st_sample (PicoBonito, 250, type="random", exact=T)#sample random points (will need to sample more than neede consider degree of thinning)
-#random_points<-st_sf(random_points)
-plot(random_points,pch=16) #plot the original random points
-
-  
-new<-thinpoints(points=random_points,buffer_dist=1000)
-plot(st_geometry(new),col="blue",pch=16,add=T)
+#example
+#points needs to be sf class,  buffer distance in scale of crs
+new<-thinpoints(points=random_points,buffer_dist=10000)
+plot(st_geometry(new),col="red",pch=16,add=T)

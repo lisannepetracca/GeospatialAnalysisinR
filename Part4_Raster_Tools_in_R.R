@@ -5,6 +5,7 @@ setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #let's load all the libraries we need
 library(sf)
+library(sp)
 library(ggplot2)
 library(dplyr)
 library(raster)

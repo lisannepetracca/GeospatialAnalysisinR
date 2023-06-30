@@ -262,7 +262,7 @@ ggplot() +
   geom_spatvector(data=cam_convexhull, fill=NA, color = "blue", size=2)+
   geom_spatvector(data=cam_500m_buffer, fill="red", color = "black")+
   geom_spatvector(data = camlocs_vec) +
-  coord_sf(crs=32616, xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
+  coord_sf(datum=crs("EPSG:32616"), xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
   ggtitle("Map of Camera Trap Locations")
 
 #if we want a map with meters rather than lat/long along the two axes, add datum=st_crs(xxxx) argument
@@ -298,7 +298,7 @@ ggplot() +
   geom_spatvector(data=cam_convexhull_land, fill=NA, color = "blue", size=2)+
   geom_spatvector(data=cam_500m_buffer, fill="red", color = "black")+
   geom_spatvector(data = camlocs_vec) +
-  coord_sf(crs=32616, xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
+  coord_sf(datum=crs("EPSG:32616"), xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
   ggtitle("Map of Camera Trap Locations")
 
 #how can we get the area (in square km) of this new polygon?

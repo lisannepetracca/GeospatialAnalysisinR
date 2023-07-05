@@ -123,7 +123,8 @@ ggplot()+
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill="white", lwd=2) +
   geom_spatvector(data = roads_Hwange, aes(colour = factor(F_CODE_DES)), size = 1, linetype = "solid", show.legend = 'line') +
   geom_spatvector(data = waterholes,   aes(colour = factor(TYPE)), size = 3) +
-  scale_color_manual("Legend", values = c("Road" = "black", 
+  scale_color_manual("Legend", labels = c("road", "pan", "riverpool", "spring"),
+                     values = c("Road" = "black", 
                                           "pan" = "purple",
                                           "riverpool" = "orange",
                                           "spring" = "deepskyblue3"))+ 

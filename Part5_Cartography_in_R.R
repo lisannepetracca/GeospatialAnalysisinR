@@ -292,7 +292,7 @@ ggplot() +
   #add grid lines for lat and long 
   theme(panel.grid.major =
       element_line(color = gray(.5), 
-                   linetype = 'dashed', size = 0.75))+
+                   linetype = 'dashed', linewidth = 0.75))+
   coord_sf()
 
 #and the last thing we need is a north arrow and a scale bar to make our map official
@@ -318,7 +318,7 @@ ggplot() +
   theme(
     panel.grid.major =
       element_line(color = gray(.5), 
-                   linetype = 'dashed', size = 0.75))+
+                   linetype = 'dashed', linewidth = 0.75))+
   coord_sf()
 
 

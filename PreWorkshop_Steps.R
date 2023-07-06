@@ -12,7 +12,8 @@ setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4h
 #*IF IT ASKS TO RESTART R, YOU CAN SAY YES*** 
 #*IF IT ASKS FOR YOUR CRAN MIRROR YOU CAN SAY CLOUD
 install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis",
-                   "ggspatial", "rgbif","sf"),dependencies=T)
+                   "ggspatial", "rgbif","sf","keyring","ggmap","move2",
+                   "adehabitatHR","FedData","raster"),dependencies=T)
 
 #*RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages>"***
 
@@ -25,6 +26,11 @@ library(viridis)
 library(ggspatial)
 library(rgbif)
 library(sf)
+library(ggmap)
+library(move2)
+library(adehabitatHR)
+library(FedData)
+library(raster)
 
 #we are ALL GOOD on packages if you do not get any error messages after running these "library" lines
 

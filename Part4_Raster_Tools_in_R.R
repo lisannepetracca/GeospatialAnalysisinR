@@ -258,7 +258,7 @@ stack
 #a note that this doesn't have to be used with just points; can be used with polygons (e.g. buffers) too - in that case,
 #extract() will extract all of the pixels within those polygons
 #you may want to add a "FUN = mean" or some other operation to summarize the pixel values for each polygon
-values <- extract(stack, Hwange_pts, df=T)
+values <- terra::extract(stack, Hwange_pts, df=T)
 
 #what does this look like?
 head(values)

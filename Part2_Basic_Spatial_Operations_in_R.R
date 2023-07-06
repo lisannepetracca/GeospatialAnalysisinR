@@ -47,7 +47,7 @@ att
 #use good old cbind() function to add attributes to points
 sv.df<-cbind(pts,att)
 
-#look at sf.df
+#look at sv.df
 sv.df
 
 #write sv.df to a shapefile using function writeVector() 
@@ -85,7 +85,7 @@ coords<-data.frame(crds(shp))
 ###What about the other vector packages 
 #sp is out of date but sf still good!
 
-#convert sp to spatVector object using vect()
+#convert sp/sf to spatVector object using vect()
 
 #convert from spatVector to simplefeatures using st_as_sf()
 library(sf)#load the sf library

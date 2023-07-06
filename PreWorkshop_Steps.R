@@ -1,18 +1,24 @@
-#First we will set our working directory
+
+
+# ---- WELCOME TO THE GEOSPATIAL ANALYSIS IN R WORKSHOP! ----
+
+# ---- (it will be a good time!) ----
+
+
+#first we will set our working directory
 #don't forget to keep the / syntax in the directory location (\ does not work)
-setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023")
-#CHANGE DIRECTORY TO WHERE YOUR "Geospatial_Analysis_in_R" FOLDER IS
-#Hint you can find the directory in file explorer and copy/paste 
+
+setwd("C:/PASTE THE LOCATION OF WHERE YOUR Geospatial_Analysis_in_R FOLDER IS")
+#Hint: you can find the directory in file explorer and copy/paste 
 
 #Let's run through some steps to make sure we are good to go for the workshop
 
-#Now, let's install some packages
+#First we need to install some packages
 
-#then we will install other packages that *are* in the CRAN library
 #*IF IT ASKS TO RESTART R, YOU CAN SAY YES*** 
 #*IF IT ASKS FOR YOUR CRAN MIRROR YOU CAN SAY CLOUD
 install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis",
-                   "ggspatial", "rgbif","sf","keyring","ggmap","move2",
+                   "ggspatial", "cowplot", "sf", "tmap", "rgbif","keyring","ggmap","move2",
                    "adehabitatHR","FedData","raster"),dependencies=T)
 
 #*RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages>"***
@@ -24,6 +30,9 @@ library(rnaturalearth)
 library(tidyterra)
 library(viridis)
 library(ggspatial)
+library(sf)
+library(tmap)
+library(cowplot)
 library(rgbif)
 library(sf)
 library(ggmap)

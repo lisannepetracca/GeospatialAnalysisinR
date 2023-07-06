@@ -7,38 +7,37 @@
 #(5) extract mean values from raster stack for 1000-m buffers around the 100 random points
 #(6) save as .csv
 
+#change this to your working directory
 setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
-library(sf)
-library(raster)
-library(units)
+library(terra)
+library(tidyterra)
 library(ggplot2)
 
 #read in Hwange NP 
-Hwange <- st_read("Example_Zimbabwe/Hwange_NP.shp")
+Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
 
 #let's check out the coordinate system
-crs(Hwange)
+crs(Hwange, describe=T)
 #yay, already in UTM! no need to project
 
-area_m2 <- st_area(Hwange)
-#convert to km2
-(area_km2 <- as.numeric(set_units(area_m2, km^2)))
+area_km2 <- expanse(Hwange, unit="km")
+area_km2
 
 #let's generate 100 random pts within the park
-random_points <- st_sample(Hwange, size=100, type="random")
+random_points <- spatSample(Hwange, size=100, method="random")
 
 #read in elevation & check out CRS
-elev <- raster("Example_Zimbabwe/elev_Hwange.tif")
-crs(elev)
+elev <- rast("Example_Zimbabwe/elev_Hwange.tif")
+crs(elev, describe=T)
 
 #let's plot it
 plot(elev)
 #elev looks good & is already in UTM 35S, yay!
 
 #read in distance to waterhole & check out CRS
-distwater <- raster("Example_Zimbabwe/Dist_Waterhole_Hwange.tif")
-crs(distwater)
+distwater <- rast("Example_Zimbabwe/Dist_Waterhole_Hwange.tif")
+crs(distwater, describe=T)
 
 #let's plot it
 plot(distwater)
@@ -46,14 +45,11 @@ plot(distwater)
 
 #let's ensure the rasters align
 distwater_align <- resample(distwater, elev, method="bilinear")
-stack <- stack(elev, distwater_align)
-
-#will need to make the random points a spatial object to use extract() function
-random_pts_sp <- as(random_points,"Spatial")
+stack <- c(elev, distwater_align)
 
 #let's extract mean values for elevation and distance to waterhole for these buffers
-#note that you do not use a "method" argument here, only a "fun" argument to take the mean
-raster_values <- extract(stack, random_pts_sp, buffer=1000, fun = mean, df=T)
+#note that we are using a "fun" argument to take the mean
+raster_values <- extract(stack, random_points, buffer=1000, fun = mean, df=T)
 
 #write these values to a .csv
 write.csv(raster_values, "elev_distwater_hwange.csv")

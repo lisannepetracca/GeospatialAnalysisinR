@@ -253,7 +253,7 @@ plot(candat,col=as.factor(candat$species),pch=16)
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 #Or read in directly (L91) and run line 92
-#world<-sf::st_read("Example_Canidae/world.shp")
+#world<-vect("Example_Canidae/world.shp")
 #world$name<-world$CNTRY_NAME
 
 ##plot the world

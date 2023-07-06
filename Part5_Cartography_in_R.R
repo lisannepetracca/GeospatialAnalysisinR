@@ -385,7 +385,7 @@ ggplot() +
 ########### MAKING MULTIPLOTS
 
 #plotting multiple objects side by side
-#here we are using package cowplot, but also see viewports() in package grid
+#here we are using package cowplot, but also see the viewports() function in package grid
 
 #lets save some of the maps from earlier as objects map and map2
 map <- ggplot() +

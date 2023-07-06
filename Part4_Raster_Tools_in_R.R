@@ -1,12 +1,14 @@
-# ---- RASTER TOOLS IN R ----
+# ---- PART 4: RASTER TOOLS IN R ----
 
 #let's set our working directory first
+setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #let's load all the libraries we need
 library(ggplot2)
 library(terra)
 library(tidyterra)
+
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 

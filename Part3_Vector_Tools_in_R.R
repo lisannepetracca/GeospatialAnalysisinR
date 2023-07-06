@@ -1,8 +1,9 @@
-# ---- VECTOR OPERATIONS ----
+# ---- PART 3: VECTOR TOOLS IN R ----
 
 #let's set our working directory first
 #this working directory will link to where you have stored the workshop data on your PC
 
+setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
@@ -11,6 +12,7 @@ library(ggplot2)
 library(rnaturalearth)
 library(tidyterra)
 library(tidyverse)
+
 
 # ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
 

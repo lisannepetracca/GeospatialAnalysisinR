@@ -42,8 +42,6 @@ ext(PAs)
 #how many features are in the object?
 nrow(PAs)
 
-
-
 #let's plot this SpatVector
 ggplot() + 
   geom_spatvector(data = PAs, size = 0.5, color = "black", fill = "darkgreen") + 

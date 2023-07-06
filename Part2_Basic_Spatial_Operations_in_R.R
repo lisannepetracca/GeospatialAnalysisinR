@@ -1,13 +1,17 @@
+# ---- PART 2: BASIC SPATIAL OPERATIONS IN R ----
+
+#let's set our working directory first
+setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+
 #install.packages(c("terra"))
 library(terra)
-setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023/Geospatial_Analysis_in_R")#Change to your working directory path
 
 ###CAN WORK WITH SPATIAL DATA AS DATA FRAME 
 ##create unprojected spatial data 
 #NO PROJECTION - NOT GOOD
 data<-data.frame(long=c(-76.13332,-76.86515,-76.851651), # c() concatenates values separated by commas 
                  lat=c(42.85632,42.65465,42.51311))
-data#Inspect to see what data looks like
+data #Inspect to see what data looks like
 
 #plot spatial data
 plot(data)

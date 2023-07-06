@@ -19,7 +19,7 @@ setwd("C:/PASTE THE LOCATION OF WHERE YOUR Geospatial_Analysis_in_R FOLDER IS")
 #*IF IT ASKS FOR YOUR CRAN MIRROR YOU CAN SAY CLOUD
 install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis",
                    "ggspatial", "cowplot", "sf", "tmap", "rgbif","keyring","ggmap","move2",
-                   "adehabitatHR","FedData","raster"),dependencies=T)
+                   "adehabitatHR","FedData","raster","tidyverse"),dependencies=T)
 
 #*RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages>"***
 
@@ -28,6 +28,7 @@ library(terra)
 library(ggplot2)
 library(rnaturalearth)
 library(tidyterra)
+library(tidyverse)
 library(viridis)
 library(ggspatial)
 library(sf)

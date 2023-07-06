@@ -3,8 +3,8 @@
 #let's set our working directory first
 #this working directory will link to where you have stored the workshop data on your PC
 
+#setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(terra)

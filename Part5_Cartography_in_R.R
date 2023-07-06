@@ -1,8 +1,8 @@
 # ---- PART 5: CARTOGRAPHY ----
 
 #let's set our working directory first
+#setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(terra)

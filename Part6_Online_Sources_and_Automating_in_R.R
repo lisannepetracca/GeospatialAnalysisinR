@@ -3,7 +3,7 @@
 #set your working directory
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 
-#get the working directory and save as an object wd
+#get the working directory and save as an object wd to access later
 wd<-getwd()
 
 #install.packages(c("terra","tidyterra","ggplot2", "viridis","ggspatial","rnaturalearth","rnaturalearthdata"))

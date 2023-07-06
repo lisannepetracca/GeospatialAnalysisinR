@@ -34,8 +34,9 @@ pts <-  vect(data,geom = c("long", "lat"), crs = crdref)
 pts
 plot(pts)
 
-##Create an spatVector object with data
-#Create attributes corresponding to the row from data 
+####Create an spatVector object with data######
+
+#Create attributes corresponding to the rows from data 
 #(alternatively you would pull from your database/csv etc.)
 # here creating sites pond, river, and forest, and ID for each row in data
 att<-data.frame(site=c("Pond","River","Forest"),ID=1:nrow(data))
@@ -43,18 +44,16 @@ att<-data.frame(site=c("Pond","River","Forest"),ID=1:nrow(data))
 #look at att
 att
 
-#use st_as_sf() function to add attributes to points
-#how do we do this?
-#really great for determining if sp or sf objects are required
-sf.df<-cbind(pts,att)
+#use good old cbind() function to add attributes to points
+sv.df<-cbind(pts,att)
 
 #look at sf.df
-sf.df
+sv.df
 
-#write st.df to a shapefile using function write.sf() 
-writeVector(sf.df,"myshapefile.shp",overwrite=T)
+#write sv.df to a shapefile using function writeVector() 
+writeVector(sv.df,"myshapefile.shp",overwrite=T)
 
-#read in myshapefile using the read.sf() function 
+#read in myshapefile using the vect() function 
 shp<-vect("myshapefile.shp")
 
 #Inspect and check loaded simple features object created from the shapefile
@@ -62,6 +61,7 @@ shp#look shp
 str(shp)#look at data
 
 crs(shp)#look at coordinate reference system - note can be saved to object & applied to other datasets
+
 #wow thats a lot -how about we try this
 crs(shp,describe=T)
 #much better!!
@@ -69,7 +69,7 @@ crs(shp,describe=T)
 #lets plot it
 plot(shp,col=as.factor(shp$site))#where 1 specifies the data column number to plot
 
-##Convert the sf object to data frame
+##Convert the spatVector object to data frame
 geo_data<-data.frame(shp)
 
 #look at geo_data

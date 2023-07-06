@@ -9,8 +9,9 @@ library(tidyterra)
 library(ggspatial) #scale bars and north arrows
 library(grid) #viewports
 library(cowplot) #for insets
-library(tmap)
-library(raster)
+
+
+
 
 
 # ---- LET'S HAVE SOME FUN WITH MAPPING! ----
@@ -166,7 +167,7 @@ register_google(key = key$Key)
 Zimbabwe <- getData("GADM",country="Zimbabwe",level=0)
 
 #if the above line doesn't work if a server is down, uncomment the below line and read it in
-#Zimbabwe <- st_read("Example_Zimbabwe/Zimbabwe.shp")
+#Zimbabwe <- vect("Example_Zimbabwe/Zimbabwe.shp")
 
 #convert to sf object
 Zimbabwe_sf <- st_as_sf(Zimbabwe)
@@ -384,38 +385,7 @@ ggplot() +
 ########### MAKING MULTIPLOTS
 
 #plotting multiple objects side by side
-  #setting viewports - easiest to set individually in my opinion
-  #here we set 3 x and y are the coordinates of the plot between 0 and 1
-  # where 0, 0 is the lower left corner- width and height go from 0- 1 where
-  # 1 is the width or height of the plot
-sample_vp_1 <- viewport(x = 0, y = 0, #right half of plotting space
-                        width =0.5, height = 1,
-                        just = c("left", "bottom"))
-sample_vp_2 <- viewport(x = 0.5, y = 0, #left half of plotting space
-                        width = 0.5, height = 1,
-                        just = c("left", "bottom"))
-sample_vp_3 <- viewport(x = 0, y = .8, #bar at top of plotting space
-                        width = 1, height = .1,
-                        just = c("left", "bottom"))
-#takes some tweaking of coordinates and size to get right
-dev.off()#clear plots
-
-#lets check our viewports to see if they look right
-
-#plot a rectangular grob in viewport 1 (left half)
-pushViewport(sample_vp_1)
-grid.draw(rectGrob(gp = gpar(col = "green",lwd=4))) 
-popViewport(1)
-
-#plot a rectangular grob in viewport 2 (right half)
-pushViewport(sample_vp_2)
-grid.draw(rectGrob(gp = gpar(col = "blue",lwd=4)))
-popViewport(1)
-
-#plot a rectangular grob in viewport 3 (top strip)
-pushViewport(sample_vp_3)
-grid.draw(rectGrob(gp = gpar(col = "black",lwd=4)))
-popViewport(1)
+#here we are using package cowplot, but also see viewports() in package grid
 
 #lets save some of the maps from earlier as objects map and map2
 map <- ggplot() +
@@ -434,30 +404,18 @@ map2 <- ggplot() +
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme_void()
 
-#close plots
-dev.off()
+#let's place these together and make sure they're aligned vertically
+combined_map <- plot_grid(map, map2, labels = "AUTO", align="v")
 
-#draw map in viewport 1
-pushViewport(sample_vp_1)
-grid.draw(ggplotGrob(map))
-popViewport(1)
-
-#draw map 2 in viewport 2
-pushViewport(sample_vp_2)
-grid.draw(ggplotGrob(map2))
-popViewport(1)
-
-#place a heading up top in viewport 3
-pushViewport(sample_vp_3)
-grid.text("Just looking at some maps", gp=gpar(fontsize=20, col="black"))
-popViewport(1)
-
-#hey, let's do an inset!
+#INSET MAPS
 
 #let's add an inset to what we call "map" above
-#our inset map will be an outline of Hwange NP only
+#our inset map will be an outline of Zimbabwe only
+
+Zimbabwe <- vect("Example_Zimbabwe/Zimbabwe.shp")
+
 inset <- ggplot() +
-  geom_spatvector(data = HwangeNP, color = "black", fill = "white", lwd=2) +
+  geom_spatvector(data = Zimbabwe, color = "black", fill = "white", lwd=1) +
   theme_void()+
   #we'll add a border to the inset
   theme(
@@ -472,3 +430,26 @@ map_w_inset <- ggdraw() +
             x = -0.35, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
+#ok. that' cool. but how do we get a box around a smaller part of the study area?
+#we basically need to create a spatVector from the extent of the other map!
+
+extent <- ext(elev) #get the extent
+box <- vect(extent, crs="EPSG:32735") #and make this extent a spatVector
+
+#now we add a new line to the inset map & redo!
+inset <- ggplot() +
+  geom_spatvector(data = Zimbabwe, color = "black", fill = "white", lwd=1) +
+  geom_spatvector(data = box, color = "red", fill = NA, lwd=1) + #NEW LINE
+  theme_void()+
+  #we'll add a border to the inset
+  theme(
+    panel.border = element_rect(fill = NA, colour = "black"),
+    plot.background = element_rect(fill = "grey95")
+  )
+
+map_w_inset <- ggdraw() +
+  draw_plot(map) +
+  draw_plot(inset,
+            height = 0.2,
+            x = -0.35, #you will have to play with these values a bit to get them right!
+            y = 0.06)

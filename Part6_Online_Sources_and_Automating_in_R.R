@@ -71,10 +71,10 @@ if(i=="b"){ #run individual lines of code to check for errors
 #here we are going to grab elevation and the boundaries of Texas Wildlife Management Areas  
 #we are going to do this using loops to practice
 
-#because in zip files need to create pathways for each zip file to be downloaded to
+#need to define names for each file to be downloaded to
 tx<-("/TX_WMAs") #Texas WMA boundaries
 ele<-("/ele") #ele stored in new folder ele
-rds<-("/roads")
+rds<-("/roads")#texas roads
 root<- c(tx,ele,rds) #going to bind folder pathways into vector to reference later
 
 #get URLS from internet for zip files
@@ -86,9 +86,9 @@ files<-c(
 
 #write a loop to batch download URLS
 #this might take a few minutes to run
-for (i in 1:length(files)){ #iterate through each instance of files (aka run through 1:2 here)
-  #note I prefer length(files) as opposed to 1:2, because I can add or delete files to root and files and this still works
-  download.file(files[i],paste(wd,root[i],sep="")) #download file from that instance (i) usin download.file() function
+for (i in 1:length(files)){ #iterate through each instance of files (aka run through 1:3 here)
+  #note I prefer length(files) as opposed to 1:3, because I can add or delete files to root and files and this still works
+  download.file(files[i],paste(wd,root[i],sep="")) #download file from that instance (i) using download.file() function
   #of files into the working directory with the corresponding root
 }
 
@@ -98,14 +98,18 @@ files[i] #check files at that iteration
 paste(wd,root[i],sep="") #see where we are storing it
 
 #unzip each file
-for (i in 1:length(files)){ #for each instance in files (1:2 in this case)
+for (i in 1:length(files)){ #for each instance in files (1:3 in this case)
   unzip(paste(wd, root[i], sep=""))} #unzip the folder corresponding to wd + particular root 
 
-#read in TX WMAs and roads shapefiles & elevation raster
+#read in TX WMAs, roads shapefiles, & elevation raster
 TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
 roads<-vect("tl_2019_48_prisecroads.shp")
-#Plot NY shapefile and view
 ele<-rast("mn30_grd")#DONT PLOT,load raster file-this is for the entire US, LARGE FILE!!
+
+#Alternatively read them in from file
+#TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
+#roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
+#ele<-rast("Example_TX/mn30_grd")
 
 #since elevation is a big file what if we just cropped it to the extent of our
 #WMA layer
@@ -121,12 +125,6 @@ length(TX_WMA$LoName)
 # or was it for permitting? either way
 #wow that's a lot of study site maps to make!
 
-#lets start I guess...
-#starting with the map from cartography
-
-#what if we want it more earth toned
-#And the last thing wee need is a north arrow and a scale bar to make our map official 
-
 #lets get the extent for the first WMA
 sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
 x.min<-xmin(sub)
@@ -135,7 +133,7 @@ x.max<-xmax(sub)
 y.max<-ymax(sub)
 
 #total extent
-bbox <- c(left = x.min-0.015, bottom = y.min-0.015, right = x.max+0.015, top = y.max+0.015)
+bbox <- c(left = x.min-0.035, bottom = y.min-0.035, right = x.max+0.035, top = y.max+0.035)
 
 #we will use ggmap which has decent basemaps but we need to convert to a data frame w/ coordinates
 coords<-data.frame(crds(sub))
@@ -143,8 +141,6 @@ geo_dat_coords<-cbind(data.frame(sub),coords)
 
 #get out basemap using get_stamenmap -lots of options here!
 map<-get_stamenmap(bbox,maptype = "terrain",zoom=13)
-
-
 
 #and map it!
 ggmap(map) +
@@ -171,7 +167,7 @@ dev.off()
 
 
 #Only 83 more to go!
-#jsut kidding lets loop it
+#just kidding lets loop it
 
 for (i in 1:length(unique(TX_WMA$LoName))){
   #lets set the extent for the i th  WMA
@@ -253,7 +249,8 @@ plot(candat,col=as.factor(candat$species),pch=16)
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 #Or read in directly (L91) and run line 92
-#world<-vect("Example_Canidae/world.shp")
+#world<-st_read("Example_Canidae/world.shp")
+  #reading in at simple features as that is how ne_countries downloads
 #world$name<-world$CNTRY_NAME
 
 ##plot the world
@@ -318,7 +315,6 @@ ggplot(data = world)+
 ##warning ok just plotting at smaller scale than data
 
 
-
 #########For US only and add labels
 
 #make labels
@@ -335,7 +331,7 @@ world_points <- centroids(world.sv,inside=T)
 world_points$x<-crds(world_points)[,1]
 world_points$y<-crds(world_points)[,2]
 
-
+#and plot with labels scaling to just the US
 ggplot(data = world.sv)+
   geom_spatvector(color = "black", fill = "antiquewhite", lwd=0.5) +
   stat_summary_hex(data=can,aes(x=decimalLongitude,y=decimalLatitude,z=speciesKey),
@@ -408,17 +404,17 @@ s<-	movebank_download_study(6925808,'license-md5'='0cc38362d9a726efbc0347a0d8e65
 
 #lets convert it data frame and add coordinates using the sf package (compatable with the move package)
 fisher<-data.frame(s,sf::st_coordinates(s))
-
-
-#save to csv
-write.csv(fisher,"fisherdata.csv")
-
-#read in CSV instead of downloading; read next lines
-#fisher<-read.csv("Part 6 Data/fisherdata.csv")#'Martes pennanti LaPoint New York_121719/Martes pennanti LaPoint New York.csv')
 fisher<-vect(fisher, c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
 
 #look at data
 head(fisher)
+
+#save to .shp
+writeVector(fisher,"fisherdata.shp")
+
+#read in shapefile instead of downloading; read next 2 lines
+#fisher<-vect("Example_Fisher/fisherdata.shp")
+#fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher<-na.omit(fisher,geom=T)
@@ -489,7 +485,7 @@ nlcd.terra<-rast(nlcd)
 plot(nlcd.terra)
 
 #bring in canopy -can also get from get_NLCD but not working recently
-canopy<-rast("Part 6 Data/nlcd_canopy.tif")#Alternitively load raster from file
+canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternitively load raster from file
 
 #everything needs to be in the same crs  -  because NLCD is the largest we will transform everything to 
 #the crs of the NLCD layer because this will be faster
@@ -507,12 +503,17 @@ plot(fisher,add=T,pch=16)
 #okay now lets crop our elevation layer
 crs(canopy)==crs(ele)
 
-#project elevation to nlcd
+#project elevation to crs of  nlcd
 ele.p<-project(ele,canopy)
+
+#and check
 ele.p
 canopy
 
+#crop elevation to canopy
 ele.p<-crop(ele.p,canopy)
+
+#quick check-looks good!
 plot(ele.p)
 
 ####Transform home ranges CRS and plot in a loop
@@ -589,6 +590,7 @@ pred.temp<-vect(samp)
 pred.temp$LC<-extract(canopy,pred.temp,ID=F,method="bilinear")
 pred.temp$ele<-extract(ele.p,pred.temp,ID=F,method="bilinear")
 
+#remove NAs for predict
 pred.temp<-na.omit(pred.temp,geom=T)
 
 #Create newdata from these files
@@ -612,5 +614,3 @@ plot(rsf.preds)
 for (i in 1:length(l)){
   plot((get(l[i])),lwd=3,add=T)
 }
-
-

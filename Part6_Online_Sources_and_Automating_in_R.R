@@ -1,7 +1,7 @@
-###PART 6  - ONLINE DATA SOURCES AND AUTOMATING
+# ---- PART 4: ONLINE DATA SOURCES AND AUTOMATING ----
 
 #set your working directory
-setwd("C:/Users/amanda.cheeseman/OneDrive - South Dakota State University - SDSU/Desktop/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023")
+setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 
 #get the working directory and save as an object wd
 wd<-getwd()

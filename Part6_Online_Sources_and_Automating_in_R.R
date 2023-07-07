@@ -210,7 +210,7 @@ for (i in 1:length(unique(TX_WMA$LoName))){
 key <- name_backbone(name = 'Canidae', rank='family')$usageKey
 
 #run search and download 2000 records with coordinates -->
-###Download takes a moment so skip to line 124 if uploading csv
+###Download takes a moment so skip to line 229 if uploading csv
 
 Canidae<-occ_search(taxonKey=key,limit=2000,hasCoordinate = TRUE)#this takes a bit of time
 
@@ -248,7 +248,7 @@ plot(candat,col=as.factor(candat$species),pch=16)
 #load global country boundaries shapefile
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-#Or read in directly (L91) and run line 92
+#Or read in directly (L252) and run line 254
 #world<-st_read("Example_Canidae/world.shp")
   #reading in at simple features as that is how ne_countries downloads
 #world$name<-world$CNTRY_NAME
@@ -387,7 +387,7 @@ for (i in 1:length(unique(can$species))) {  #running through 1: number of specie
 #######################################################################################
 ###########################  MOVEBANK #################################################
 
-#UNLESS YOU HAVE A MOVEBANK USERNAME AND PASSWORD SKIP TO LINE 408!!!!!
+#UNLESS YOU HAVE A MOVEBANK USERNAME AND PASSWORD SKIP TO LINE 416!!!!!
 
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data

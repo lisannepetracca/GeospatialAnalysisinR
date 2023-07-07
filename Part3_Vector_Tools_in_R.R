@@ -100,6 +100,7 @@ ggplot() +
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
 countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
 #if this line DOES NOT WORK, skip to L. 103, remove the #, and run that line
+#countries<- vect("Example_Honduras/Countries.shp")
 
 #let's look at the names of columns
 names(countries)
@@ -109,7 +110,7 @@ countries$NAME
 honduras <- countries[countries$NAME == "Honduras",]
 
 #the line to run if ne_download does not work
-# honduras <- st_read("Example_Honduras/Honduras_Border.shp")
+# honduras <- vect("Example_Honduras/Honduras_Border.shp")
 
 #and let's plot!
 ggplot() + 

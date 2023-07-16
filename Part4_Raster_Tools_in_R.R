@@ -18,14 +18,19 @@ Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
 #and do a simple plot
 plot(Hwange)
 
-#let's create 1000 random points within the PA for vegetation sampling
+#let's create 1000 random points within the PA for to represent 'lion sightings' using spatSample()
+#size = number of points
+#method can be regular or random or stratified if using a spatRaster
+#replace=T; sampling with replacement (if)
 Hwange_pts <- spatSample(Hwange, size=1000, method="random")
+
 
 #what does this look like?
 ggplot() +
-  geom_spatvector(data = Hwange, color = "darkgreen", size=1.5) +
-  geom_spatvector(data=Hwange_pts, color = "black", size=1.5)+
+  geom_spatvector(data = Hwange, color = "darkgreen", lwd=1.5) +
+  geom_spatvector(data=Hwange_pts, color = "black", size=1)+
   ggtitle("1000 Random Points in Hwange NP")
+#depending on your version of R you may need to change the 'size' argument to 'lwd' for lines
 
 #now let's bring in our waterholes and roads 
 roads <- vect("Example_Zimbabwe/ZWE_roads.shp")
@@ -33,9 +38,9 @@ waterholes <- vect("Example_Zimbabwe/waterholes.shp")
 
 #let's plot those vectors within Hwange
 ggplot() +
-  geom_spatvector(data=roads, color = "black", size=1)+
+  geom_spatvector(data=roads, color = "black", lwd=1)+
   geom_spatvector(data=waterholes, color= "blue", size=1)+
-  geom_spatvector(data = Hwange, color = "darkgreen", fill=NA, size=1.5) +
+  geom_spatvector(data = Hwange, color = "darkgreen", fill=NA, lwd=1.5) +
   ggtitle("Roads and Waterholes in Hwange NP")
 
 #wow, this map looks terrible. how can we change the extent?
@@ -45,8 +50,8 @@ park_extent <- ext(Hwange)
 #now we can provide these bounding box coordinates to coord_sf
 #here, our coordinate system is WGS 1984 UTM Zone 35S (EPSG 32735)
 ggplot() +
-  geom_spatvector(data = Hwange, color = "darkgreen", fill = "white", size=1.5) +
-  geom_spatvector(data=roads, color = "black", size=1)+
+  geom_spatvector(data = Hwange, color = "darkgreen", fill = "white", lwd=1.5) +
+  geom_spatvector(data=roads, color = "black", lwd=1)+
   geom_spatvector(data=waterholes, color= "blue", size=2)+
   ggtitle("Roads and Waterholes in Hwange NP")+
   coord_sf(datum=crs("EPSG:32735"), xlim=c(park_extent[1], park_extent[2]), ylim=c(park_extent[3], park_extent[4]))
@@ -70,7 +75,7 @@ elev
 summary(elev)    #WARNING MESSAGE IS OK
 
 #if you want it to use ALL the values in the dataset, use
-summary(elev, maxsamp = ncell(elev))
+summary(elev, size = ncell(elev))#should be size not maxsamp
 #not much of a difference, eh? 
 #we may notice larger changes w bigger rasters
 
@@ -119,23 +124,20 @@ plot(Hwange, border="black",col=NA,lwd=2,add=T)
 #set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
 writeRaster(elev_crop_UTM, "Example_Zimbabwe/elev_Hwange.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
 
-#what if we wanted to plot in ggplot?
-#it's just a bit trickier bc we have to convert the raster to a data frame first
-#this is a sneak peak of our "Cartography" section, which is next!
-elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
-
-#now we can plot as we did for the vector data, but take note of "geom_raster" argument
-#also, note that we are taking the third column of "elev_df" as our color fill
-#as this is the column that has our raster values
+#what if we wanted to plot in ggplot? - use geom_spatraster!
 ggplot() +
-  geom_raster(data = elev_df , aes(x = x, y = y, fill = elev_df[,3])) +
+  geom_spatraster(data = elev_crop_UTM) +
   #the below is a color bar that is colorblind-friendly
   scale_fill_viridis_c() +
-  geom_spatvector(data = Hwange[1], fill=NA, color="black", size = 1) 
+  geom_spatvector(data = Hwange[1], fill=NA, color="black", lwd = 1) 
 
 #we can make a histogram within ggplot too
 #can help you determine if you have wonky values
+#first convert to a data frame
 #values outside of an expected range can be considered suspect
+elev_df <- as.data.frame(elev_crop_UTM, xy=TRUE)
+
+#plot it!
 ggplot() +
   geom_histogram(data = elev_df, aes(elev_df[,3]), bins=40) 
 
@@ -178,6 +180,8 @@ ext(elev_crop_UTM)
 #this could be from pixels having a different lower left origin, for instance
 #we will need to realign extents here through resample()
 elev_crop_match <- resample(elev_crop_UTM, veg_crop, method="bilinear")
+#make sure method aligns with data type (i.e. categorical vs. continuous) see ?resample
+
 stack <- c(veg_crop, elev_crop_match)
 #yay, it works now!
 
@@ -208,6 +212,8 @@ plot(roads_hwange)
 
 #for distance to linear features (roads), let's use distance()
 #first, we create an empty raster of a certain resolution & extent such that we can *eventually* store our distances there
+#We did something very similar creating a raster from scratch in part 2 but now we specify
+#resolution by 'res='
 raster_extent <-  rast(ext(veg_crop), res=250, crs="EPSG:32735")
 
 #now we'll use distance() to calculate the distance between the different geometries
@@ -281,11 +287,3 @@ plot(stack_import)
 #if we wish to subset elevation only
 elev <- subset(stack_import,subset=2)
 plot(elev)
-
-#please see links in slides for how to do "other" tasks that we don't have enough time to cover
-#(1) merging rasters together
-#(2) basic raster calculations (adding, subtracting)
-#(3) convert polygon to raster
-#(4) calculating more patch, class, and landscape-level metrics a la FRAGSTATS
-#(5) calculating proportion of discrete land cover types within polygons (can be grids or
-#buffers around points)

@@ -17,7 +17,7 @@ data #Inspect to see what data looks like
 plot(data)
 #note if "Error in plot.new() : figure margins too large" resize the plot window 
 #in the (default lower right window) to be larger
-
+#Here we are using data created in R but could also create spatial points from any .csv, .txt, etc. with coordinates
 
 #########################################################################
 ##### SPATIAL DATA TYPES in terra
@@ -52,7 +52,8 @@ sv.df
 
 #write sv.df to a shapefile using function writeVector() 
 writeVector(sv.df,"myshapefile.shp",overwrite=T)
-
+#Does it have to be in shapefile format? NO!! https://gdal.org/drivers/vector/index.html 75+ drivers! 
+  
 #read in myshapefile using the vect() function 
 shp<-vect("myshapefile.shp")
 
@@ -86,6 +87,8 @@ coords<-data.frame(crds(shp))
 #sp is out of date but sf still good!
 
 #convert sp/sf to spatVector object using vect()
+#Create a sp object using as(shp,"Spatial")
+#(need to load both packages sp and raster)
 
 #convert from spatVector to simplefeatures using st_as_sf()
 library(sf)#load the sf library

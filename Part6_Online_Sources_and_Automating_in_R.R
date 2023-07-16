@@ -139,7 +139,7 @@ bbox <- c(left = x.min-0.035, bottom = y.min-0.035, right = x.max+0.035, top = y
 coords<-data.frame(crds(sub))
 geo_dat_coords<-cbind(data.frame(sub),coords)
 
-#get out basemap using get_stamenmap -lots of options here!
+#get out basemap using get_stamenmap -lots of 'maptype' options here!-see ?get_stamenmap
 map<-get_stamenmap(bbox,maptype = "terrain",zoom=13)
 
 #and map it!
@@ -604,7 +604,7 @@ pred.temp$pred<-(pred.temp$pred-min(pred.temp$pred,na.rm=T))/(max(pred.temp$pred
 
 #NLCD is super fine scale and takes too much memory to process
 #need to lower resolution of NLCD raster for processing
-#convert our backgound point predictions to a raster 
+#convert our background point predictions to a raster 
 rsf.preds<-rasterize(pred.temp,aggregate(canopy,fact=6),field="pred")
 
 #plot it!

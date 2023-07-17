@@ -144,7 +144,12 @@ ggplot()+
   #we are basically saying that the road is a line with linetype 1 (solid line) and no shape
   #we also say that the waterholes are not lines (linetype=0) and are instead points with shape 16
   guides(color = guide_legend(override.aes = list(linetype = c(1,0,0,0), 
-                                     shape=c(NA,16,16,16))))
+                                     color=c("Road" = "black", 
+                                             "pan" = "purple",
+                                             "riverpool" = "orange",
+                                             "spring" = "deepskyblue3"),
+                                     shape=c(NA,16,16,16))),
+         )
 
 #what if we want new shapes?
 #let's make the waterholes diamonds instead of circles

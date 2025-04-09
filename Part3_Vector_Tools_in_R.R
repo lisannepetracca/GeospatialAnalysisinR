@@ -4,7 +4,7 @@
 #this working directory will link to where you have stored the workshop data on your PC
 
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
-setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+setwd("C:/Users/kflp201/OneDrive - Texas A&M University - Kingsville/Geospatial_Analysis_in_R/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(terra)
@@ -54,7 +54,7 @@ plot(PAs)
 
 #this line will display the first row in the attribute table
 #this employs subsetting using base R
-plot(PAs[1])
+plot(PAs[115])
 
 #let's explore the different names of PAs in Honduras
 #first, let's see what the column names are so we know which one to select
@@ -92,7 +92,7 @@ nrow(BigPAs)
 
 #We can also adjust our colors to give each PA a different color
 ggplot() + 
-  geom_spatvector(data = BigPAs, aes(color = factor(NOMBRE)), size = 1.5) +
+  geom_spatvector(data = BigPAs, aes(color = factor(NOMBRE)), linewidth = 1) +
   labs(color = "Name") + #this gives name to legend
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
@@ -106,6 +106,8 @@ countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
 names(countries)
 #this looks like it has names 
 countries$NAME
+#how many countries are there?
+nrow(countries)
 #let's grab honduras from this sf object
 honduras <- countries[countries$NAME == "Honduras",]
 
@@ -115,7 +117,7 @@ honduras <- countries[countries$NAME == "Honduras",]
 #and let's plot!
 ggplot() + 
   #adds protected areas, with color by name
-  geom_spatvector(data = BigPAs, aes(color = factor(NOMBRE)), lwd = 1.5) +
+  geom_spatvector(data = BigPAs, aes(color = factor(NOMBRE)), lwd = 1) +
   #adds border of Honduras
   geom_spatvector(data = honduras, fill=NA, lwd = 1) +
   #label protected areas in legend
@@ -141,6 +143,8 @@ head(PAs_road_isect)
 #these two lines do the same thing
 honduras_roads_UTM <- project(honduras_roads, "EPSG:32616")
 honduras_roads_UTM <- project(honduras_roads, PAs)
+crs(honduras_roads_UTM, describe=T)
+crs(PAs, describe=T)
 
 #let's try that intersect again
 PAs_road_isect <- PAs[honduras_roads_UTM]
@@ -188,6 +192,7 @@ write.csv(PA_centroids_df, "PA_centroids.csv", fileEncoding = "ISO-8859-1", row.
 #let's import the csv of camera trap locations like any other .csv
 
 camlocs <- read.csv("Example_Honduras/Camera_Coordinates_JeannetteKawas.csv")
+class(camlocs)
 
 #let's see what's in this table
 head(camlocs)
@@ -215,7 +220,7 @@ writeVector(camlocs_vec,
 #symmetrical = T so that we only get each pairwise distance once
 head(camlocs_vec)
 
-dist_matrix <- distance(camlocs_vec, unit="m", pairs=T, symmetrical=T)
+dist_matrix <- distance(camlocs_vec, unit="km", pairs=T, symmetrical=T)
 
 #then let's create a buffer of 500 m around the camera trap locations
 cam_500m_buffer <- buffer(camlocs_vec, width = 500)

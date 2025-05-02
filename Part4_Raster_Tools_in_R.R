@@ -10,6 +10,9 @@ library(ggplot2)
 library(terra)
 library(tidyterra)
 library(mapview)
+library(viridis)
+library(spatstat)
+library(gstat)
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
@@ -307,6 +310,72 @@ plot(stack_import)
 #if we wish to subset elevation only
 elev <- subset(stack_import,subset=2)
 plot(elev)
+
+######################################################################################################################################
+######################## POTENTIAL NEW EXAMPLE: Point pattern process and interpolation ##############################################
+######################################################################################################################################
+#we are going to do a quick look at spatial interpolation methods
+#let's go back to our watering holes and say we sampled the water for VAR (need a story here)
+waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object
+
+#first let's simulate some data with a spatially autocorrelated structure
+vgm_model <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
+sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 0, model = vgm_model, nmax = 20)
+sim_result <- predict(sim_gstat, newdata = waterholes_sf, nsim = 1)
+waterholes_sf$new_var <- sim_result$sim1 #create new waterhole variable
+
+#let's look at the spatial pattern
+mapview::mapview(waterholes_sf, zcol = "new_var")
+
+#we can spatially create an area of influence of our VAR based on the spatial locations of our waterholes
+#we use a function from spatstat r package and some object manipulation to get it into a usable format
+tess  <- dirichlet(as.ppp(waterholes_sf)) %>% st_as_sfc() %>% st_as_sf()
+st_crs(tess) <- st_crs(waterholes_sf) #reassign crs
+tess <- tess %>% st_join(waterholes_sf, fn=mean) %>% st_intersection(st_as_sf(Hwange)) #rejoin attributes and clip to Hwange NP
+#let's see what it looks like
+#what data type is the final output?
+mapview(tess, zcol = "new_var")
+
+#first for this next approach, we need a uniform grid
+#let's use our elevation raster but resample to 4km pixels
+elev_crop_4km <- aggregate(elev_crop_UTM, 16)
+xy <- terra::xyFromCell(elev_crop_4km, 1:ncell(elev_crop_4km))
+grid <- st_as_sf(as.data.frame(xy), coords = c("x", "y"), crs = crs(elev_crop_UTM))
+
+#take a look at our grid
+mapview(grid)
+
+#inverse distance weighted (idw) example
+#unsampled locations are estimated as the weighted average of values from the rest of locations (inversely proportional to distance)
+idw <- gstat::idw(new_var ~ 1, waterholes_sf, newdata=grid, idp = 2.0)
+
+# Convert to raster object then clip to Texas
+new_var_idw <- rasterize(vect(idw), elev_crop_4km, field = "var1.pred")
+new_var_idw <- mask(new_var_idw, Hwange)
+mapview(new_var_idw)
+
+#kriging
+v <- variogram(new_var ~ 1, data = waterholes_sf, cutoff = 100000, width = 5000) #sample data
+plot(v)
+
+#we now need to fit a variogram model to our sample variogram
+vinitial <- vgm(psill = 1.2, model = "Exp", range = 10000, nugget = 0.01)
+plot(v, vinitial, cutoff = 1000, cex = 1.5)
+fv <- fit.variogram(object = v, model = vinitial)
+k <- gstat(formula = new_var ~ 1, data = waterholes_sf, model = fv)
+
+#once we have our model accounting for spatial autocorrelation we can predict to unsampled locations
+kpred <- predict(k, grid)
+
+#we will make two rasters the prediction and variance 
+new_var_krig <- rasterize(vect(kpred), elev_crop_4km, field = c("var1.pred", "var1.var"))
+new_var_krig <- mask(new_var_krig, Hwange)
+
+#let's plot our results
+ggplot() + geom_spatraster(data = new_var_krig) +
+  geom_sf(data = waterholes_sf) +
+  scale_fill_viridis(name = "new_var", na.value = "transparent") + theme_bw() +
+  facet_wrap(~lyr)
 
 #please see links in slides for how to do "other" tasks that we don't have enough time to cover
 #(1) merging rasters together

@@ -2,13 +2,14 @@
 
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
+setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 
 #let's load all the libraries we need
 library(ggplot2)
 library(terra)
 library(tidyterra)
-
+library(mapview)
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
@@ -24,8 +25,11 @@ plot(Hwange)
 #replace=T; sampling with replacement (if)
 Hwange_pts <- spatSample(Hwange, size=1000, method="random")
 
+#To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
+#Multiple spatial datasets can be added to one plot using a '+' sign between mapview call or using lists
+mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) + mapview(Hwange_pts)
 
-#what does this look like?
+#what does this look like using ggplot?
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", lwd=1.5) +
   geom_spatvector(data=Hwange_pts, color = "black", size=1)+
@@ -63,10 +67,11 @@ crs(roads, describe=T)
 #How can we convert to WGS 1984 UTM Zone 35S in order to match the waterholes?
 roads_UTM <- project(roads, "EPSG:32735")
 
-#now let's read in the elevation (it's an aster image)
+#OK now time for a raster! Let's read in the elevation (it's an aster image)
 elev <- rast("Example_Zimbabwe/aster_image_20160624.tif") 
 
 #how can we get an overview of the imported raster?
+#what does this tell us?
 elev
 
 #this is great, but can we get more stats beyond min/max?
@@ -75,7 +80,7 @@ elev
 summary(elev)    #WARNING MESSAGE IS OK
 
 #if you want it to use ALL the values in the dataset, use
-summary(elev, size = ncell(elev))#should be size not maxsamp
+summary(values(elev))#wrap our summary function with values() from the terra package
 #not much of a difference, eh? 
 #we may notice larger changes w bigger rasters
 
@@ -103,8 +108,24 @@ elev_crop <- crop(elev, Hwange_WGS)
 
 #let's see what it looks like now!
 plot(elev_crop)
-plot(Hwange_WGS,add=T)
+plot(Hwange_WGS,add=T, lwd = 5)
 
+#Quick comparison between Cropping and Masking 
+#Cropping: Removing rows and/or columns to reduce the raster extent
+#Masking: Setting pixels outside of an area of interest to NA
+
+#lets try a mask on the elev layer using Hwange_WGS
+elev_mask <- mask(elev, Hwange_WGS)
+plot(elev_mask)
+plot(Hwange_WGS,add=T, lwd = 5)
+
+#we can also apply the mask after we crop the image
+elev_crop_mask <- mask(elev_crop, Hwange_WGS)
+plot(elev_crop_mask)
+plot(Hwange_WGS,add=T, lwd = 5)
+#masking can be helpful for creating maps, accounting for boundaries, and restricting any analysis to a region of interest 
+
+#Ok back to working with our cropped elevation layer
 #what's the coordinate system of the elevation raster again?
 crs(elev_crop, describe=T)
 #it's WGS 84
@@ -117,7 +138,7 @@ elev_crop_UTM <- project(elev_crop, res=250, "EPSG:32735")
 
 #let's make sure it looks ok with our Hwange shapefile in UTM coordinates
 plot(elev_crop_UTM)
-plot(Hwange, border="black",col=NA,lwd=2,add=T)
+plot(Hwange, border="black",col=NA,lwd=5,add=T)
 #ok, we are good!
 
 #we are going to write this raster to file so we can use it later
@@ -129,7 +150,7 @@ ggplot() +
   geom_spatraster(data = elev_crop_UTM) +
   #the below is a color bar that is colorblind-friendly
   scale_fill_viridis_c() +
-  geom_spatvector(data = Hwange[1], fill=NA, color="black", lwd = 1) 
+  geom_spatvector(data = Hwange[1], fill=NA, color="black", lwd = 2) 
 
 #we can make a histogram within ggplot too
 #can help you determine if you have wonky values
@@ -166,7 +187,7 @@ veg_crop <- crop(percveg, elev_crop_UTM)
 
 #let's see what it looks like now!
 plot(veg_crop)
-plot(Hwange, border="black",col=NA,lwd=2,add=T)
+plot(Hwange, border="black",col=NA,lwd=5,add=T)
 
 #what happens when we try to make a raster stack of vegetation and elevation?
 stack <- c(veg_crop, elev_crop_UTM)
@@ -201,7 +222,7 @@ elev_reclass <- classify(elev_crop_match, reclass_mat)
 
 #let's see what it looks like now!
 plot(elev_reclass)
-plot(Hwange, border="black",col=NA,lwd=2,add=T)
+plot(Hwange, border="black",col=NA,lwd=5,add=T)
 
 #let's move on to getting distances from roads and waterholes
 #first, let's crop roads to Hwange extent
@@ -241,10 +262,9 @@ writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
 #we are using 15 cells here to show how the values are "smoothed out" visually
 elev_focal <- focal(elev_crop_match, w=15, fun=mean, na.rm=TRUE)
-#let's see the original
-plot(elev_crop_match)
-#and now let's see the smoothed out version
-plot(elev_focal)
+#let's plot them together and compare
+elev_stack <- c(elev_crop_match, elev_focal)
+plot(elev_stack)
 
 #now we are able to make a raster stack of all four rasters! 
 stack <- c(veg_crop, elev_crop_match, distroad_raster, distwater_raster)
@@ -287,3 +307,11 @@ plot(stack_import)
 #if we wish to subset elevation only
 elev <- subset(stack_import,subset=2)
 plot(elev)
+
+#please see links in slides for how to do "other" tasks that we don't have enough time to cover
+#(1) merging rasters together
+#(2) basic raster calculations (adding, subtracting)
+#(3) convert polygon to raster
+#(4) calculating more patch, class, and landscape-level metrics a la FRAGSTATS
+#(5) calculating proportion of discrete land cover types within polygons (can be grids or
+#buffers around points)

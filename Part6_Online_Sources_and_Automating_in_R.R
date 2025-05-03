@@ -21,6 +21,9 @@ library(adehabitatHR)
 library(FedData)
 library(raster)
 library(mapview)
+library(sf)
+library(landscapemetrics)
+library(tidyverse)
 
 ###Fun with loops
 
@@ -115,7 +118,7 @@ ele<-rast("mn30_grd")#DONT PLOT,load raster file-this is for the entire US, LARG
 #since elevation is a big file what if we just cropped it to the extent of our
 #WMA layer
 cropped.ele<- crop(ele,(TX_WMA))
-plot(cropped.ele)
+plot(cropped.ele, type = "continuous")
 plot(TX_WMA,add=T) 
 plot(roads,add=T,col="red")
 
@@ -482,9 +485,9 @@ plot(fast)
 
 #get landscape data - tree canopy cover from NLCD and the FedData package
 #this package is awesome because it crops NLCD as it brings it in otherwise the dataset is HUGE
-canopy<-get_nlcd(template = fisher , year = 2016, dataset = "canopy", label = "fisher canopy", force.redo = T)
+#canopy<-get_nlcd(template = fisher , year = 2016, dataset = "canopy", label = "fisher canopy", force.redo = T)
 #bring in canopy layer if get_nlcd() is not working
-#canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
+canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
 
 #everything needs to be in the same crs and matching extents. We can reproject our NLCD layers to match the fisher locations
 #NLCD uses EPSG:5070 for their products.
@@ -595,7 +598,7 @@ fish
 #loop through each home range and sample as many points as there are points for that individual, 
 #add a column used with the label 0, bind to the used GPS points
 for (i in 1:length(l)){#for 1: number of home ranges
-  out <- spatSample(get(l[i]), nrow(fisher[fisher$individual_local_identifier==
+  out <- spatSample(vect(get(l[i])), nrow(fisher[fisher$individual_local_identifier==
                                              unique(fisher.drop$individual_local_identifier)[i],]), method="random")
   #sample X random points from home range i, where X=the number of used points for that individual
   out$used<-0
@@ -610,13 +613,12 @@ plot(fish,col=(fish$used)+1,pch=16,cex=0.5)
 #The next step is to extract covariate values to the points
 
 #extract raster data to points
-fish$LC<-extract(canopy,fish,ID=F,method="bilinear")
-fish$ele<-extract(ele.p,fish,ID=F,method="bilinear")
+fish$LC<-terra::extract(canopy,fish,ID=F,method="bilinear")
+fish$ele<-terra::extract(elev,fish,ID=F,method="bilinear")
 
 model<-glm(used~-1+scale(LC)+scale(as.numeric(ele)), data=fish,family='binomial') #takes a few moments to run 
 #look at our model summary
 summary(model)
-
 
 ##Okay thats super cool fishers like canopy cover and avoid higher elevations here but what does that
 #look like on the landscape??? To look at suitability across a landscape we need to plug in the  
@@ -631,8 +633,8 @@ plot(samp)
 pred.temp<-vect(samp)
 
 #extract values
-pred.temp$LC<-extract(canopy,pred.temp,ID=F,method="bilinear")
-pred.temp$ele<-extract(ele.p,pred.temp,ID=F,method="bilinear")
+pred.temp$LC<-terra::extract(canopy,pred.temp,ID=F,method="bilinear")
+pred.temp$ele<-terra::extract(elev,pred.temp,ID=F,method="bilinear")
 
 #remove NAs for predict
 pred.temp<-na.omit(pred.temp,geom=T)

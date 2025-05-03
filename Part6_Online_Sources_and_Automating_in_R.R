@@ -20,6 +20,7 @@ library(move2)
 library(adehabitatHR)
 library(FedData)
 library(raster)
+library(mapview)
 
 ###Fun with loops
 
@@ -392,7 +393,7 @@ for (i in 1:length(unique(can$species))) {  #running through 1: number of specie
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to direclty download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" ,password ="")
+movebank_store_credentials(username="mmsmith" ,password ="eEwqu9S$E5m@r")
 s<-	movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -424,11 +425,13 @@ table(fisher$individual_local_identifier)
 
 #look at the fisher data to make sure everything looks right
 plot(fisher,col=as.factor(fisher$individual_local_identifier))
+#let's take a quick look with mapview as well to see where this data is located
+mapview::mapview(fisher, zcol = "individual_local_identifier")
 
 #Excellent! Now we can move on to home ranges
 
 #####calculate home ranges for individuals
-#we are goiung to use minimum convex polygons to estimate the home range for each individual using the 
+#we are going to use minimum convex polygons to estimate the home range for each individual using the 
 #mcp() function in adehabitatHR. This package requires sp classes so we need to transform our data
 #from spatVector to sp. This package has some other useful movement statistics - check it out!
 
@@ -439,6 +442,7 @@ fisher.drop<-as((fisher[,"individual_local_identifier"]),"Spatial")
 #initalize vector to store names of home range shapefiles
 l<-rep(NA,length(unique(fisher.drop$individual_local_identifier)))
 
+#MMS COMMENT: Is this section helpful? Do we just get rid of the for loop, not sure if individual shapefiles are that important
 #loop through all unique individuals, calculate 95% Minimum convex polygon, rename shapefile by individual, save as shapefile,
 #plot the MCP and add the name of the shapefile to l
 for (i in 1:length(unique(fisher.drop$individual_local_identifier))) { #for 1: number of individuals
@@ -476,57 +480,58 @@ plot(fast)
 #we already brought in elevation (ele), but its for the country so too big to work with
 #we can get canopy from NLCD but NLCD is also too big to work with rapidly at the country level
 
-#get landscape data - Tree canopy cover from NLCD and the FedData package
+#get landscape data - Land cover and tree canopy cover from NLCD and the FedData package
 #this package is awesome because it crops NLCD as it brings it in otherwise the dataset is HUGE
-nlcd<-get_nlcd(template =fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
+nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
+canopy<-get_nlcd(template = fisher , year = 2016, dataset = "canopy", label = "fisher canopy", force.redo = T)
+#bring in canopy layer if get_nlcd() is not working
+#canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
 
-#convert back to terra object
-nlcd.terra<-rast(nlcd)
-plot(nlcd.terra)
+#everything needs to be in the same crs and matching extents. We can reproject our NLCD layers to match the fisher locations
+#NLCD uses EPSG:5070 for their products.
+nlcd <- project(nlcd, crs(fisher))
+nlcd <- crop(nlcd, fisher)
+plot(nlcd)
 
-#bring in canopy -can also get from get_NLCD but not working recently
-canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternitively load raster from file
-
-#everything needs to be in the same crs  -  because NLCD is the largest we will transform everything to 
-#the crs of the NLCD layer because this will be faster
-
-#Transform points to raster CRS 
-fisher<-project(fisher,crs(canopy))
-canopy<-crop(canopy,fisher)
-
-#look at it
+canopy <- project(canopy, crs(fisher))
+canopy <- crop(canopy, fisher)
 plot(canopy)
 
-#look at them on top of NLCD canopy layer
-plot(fisher,add=T,pch=16)
+#let's also pull in a elevation raster using FedData
+elev <- get_ned(template =fisher, label = "fisher elev", force.redo = T)
+elev <- project(elev, canopy)
+elev <- crop(elev, canopy)
 
-#okay now lets crop our elevation layer
-crs(canopy)==crs(ele)
+fisher_sf <- st_as_sf(fisher.drop)
+#let's look at our canopy layer with the fisher locations
+ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
+  geom_sf(data = fisher_sf, color = "red", alpha = 0.2) +
+  scale_fill_viridis(name = "canopy cover (%)", na.value = "transparent") + theme_bw() +
+  facet_wrap(~individual_local_identifier, ncol = 2)
 
-#project elevation to crs of  nlcd
-ele.p<-project(ele,canopy)
+#we can also plot single individual home ranges and use a loop 
+#need to transform home ranges CRS
 
-#and check
-ele.p
-canopy
-
-#crop elevation to canopy
-ele.p<-crop(ele.p,canopy)
-
-#quick check-looks good!
-plot(ele.p)
-
-####Transform home ranges CRS and plot in a loop
-#remember what l is
-l
-for (i in 1 :length(l)){ #for every instance in 1:number of home ranges stored in l
-  out<-vect(get(l[i])) #get the object l[i] and convert to SpatVector class 
+#let's convert the fisher mcp that are a SpatialPolygonsDataFrame object to an sf object
+fast_sf <- st_as_sf(fast)
+#get the unique ids
+fisher_ids <- unique(fast_sf$id)
+for (i in 1 :length(fisher_ids)){ #for every instance in 1:number of home ranges stored in l
+  out <- fast_sf[fast_sf$id == fisher_ids[i],] #get all rows that match our fisher id
   #because we will need it in this class to sample random points in a minute
-  out<-project(out,crs(canopy))#transform it to the crs of nlcd
-  assign(paste(l[i],sep=""),out) #assign it the same name it had MCP.[individual Id]
-  plot(out,add=T,col=i)#plot it on the NLCD canopy layer that is open
+  out<-st_transform(out,crs(canopy))#transform it to the crs of our canopy layer
+  #assign(paste(l[i],sep=""),out) #assign it the same name it had MCP.[individual Id]
+  p.out <- ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
+    geom_sf(data = out, color = "red", fill = NA, lwd = 2) +
+    scale_fill_viridis(name = "canopy cover (%)", na.value = "transparent") + theme_bw()
+  print(p.out)
+  #use ggsave to save outputs as pdfs/tifs/jpegs
+  #ggsave(paste0("MCP_95_", fisher_ids[i], ".pdf"))  #example
 }
 
+######################################################################################################################################
+#### MMS COMMENT: POTENTIAL ADDITION; LANDSCAPE METRICS OF MCPs
+######################################################################################################################################
 
 
 ############### BASIC RESOURSE SELECTION FUCTION (RSF)  EXERCISE  ##############

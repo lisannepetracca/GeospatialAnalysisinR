@@ -430,6 +430,7 @@ mapview::mapview(fisher, zcol = "individual_local_identifier")
 
 #Excellent! Now we can move on to home ranges
 
+# MMS COMMENT: sf does have an mcp function, wonder if it is worth just using sf instead so no dont need the spatialpolygondataframe
 #####calculate home ranges for individuals
 #we are going to use minimum convex polygons to estimate the home range for each individual using the 
 #mcp() function in adehabitatHR. This package requires sp classes so we need to transform our data
@@ -442,7 +443,7 @@ fisher.drop<-as((fisher[,"individual_local_identifier"]),"Spatial")
 #initalize vector to store names of home range shapefiles
 l<-rep(NA,length(unique(fisher.drop$individual_local_identifier)))
 
-#MMS COMMENT: Is this section helpful? Do we just get rid of the for loop, not sure if individual shapefiles are that important
+# MMS COMMENT: also wouldn't need this for loop to plot stuff, probably could just use ggplot and facets
 #loop through all unique individuals, calculate 95% Minimum convex polygon, rename shapefile by individual, save as shapefile,
 #plot the MCP and add the name of the shapefile to l
 for (i in 1:length(unique(fisher.drop$individual_local_identifier))) { #for 1: number of individuals
@@ -474,25 +475,19 @@ fast<-(mcp(fisher.drop, percent=95))
 #look at the home ranges
 plot(fast)
 
-
 #####GATHER COVARIATES
 #so now we have MCPs we need to get our covariates organized. We are using canopy and elevation
 #we already brought in elevation (ele), but its for the country so too big to work with
 #we can get canopy from NLCD but NLCD is also too big to work with rapidly at the country level
 
-#get landscape data - Land cover and tree canopy cover from NLCD and the FedData package
+#get landscape data - tree canopy cover from NLCD and the FedData package
 #this package is awesome because it crops NLCD as it brings it in otherwise the dataset is HUGE
-nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
 canopy<-get_nlcd(template = fisher , year = 2016, dataset = "canopy", label = "fisher canopy", force.redo = T)
 #bring in canopy layer if get_nlcd() is not working
 #canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
 
 #everything needs to be in the same crs and matching extents. We can reproject our NLCD layers to match the fisher locations
 #NLCD uses EPSG:5070 for their products.
-nlcd <- project(nlcd, crs(fisher))
-nlcd <- crop(nlcd, fisher)
-plot(nlcd)
-
 canopy <- project(canopy, crs(fisher))
 canopy <- crop(canopy, fisher)
 plot(canopy)
@@ -501,6 +496,7 @@ plot(canopy)
 elev <- get_ned(template =fisher, label = "fisher elev", force.redo = T)
 elev <- project(elev, canopy)
 elev <- crop(elev, canopy)
+plot(elev)
 
 fisher_sf <- st_as_sf(fisher.drop)
 #let's look at our canopy layer with the fisher locations
@@ -516,7 +512,7 @@ ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you wan
 fast_sf <- st_as_sf(fast)
 #get the unique ids
 fisher_ids <- unique(fast_sf$id)
-for (i in 1 :length(fisher_ids)){ #for every instance in 1:number of home ranges stored in l
+for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges stored in l
   out <- fast_sf[fast_sf$id == fisher_ids[i],] #get all rows that match our fisher id
   #because we will need it in this class to sample random points in a minute
   out<-st_transform(out,crs(canopy))#transform it to the crs of our canopy layer
@@ -533,6 +529,49 @@ for (i in 1 :length(fisher_ids)){ #for every instance in 1:number of home ranges
 #### MMS COMMENT: POTENTIAL ADDITION; LANDSCAPE METRICS OF MCPs
 ######################################################################################################################################
 
+#what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
+#we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
+
+#let's get nlcd land cover using the FedData package again
+nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
+
+#we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
+crs(nlcd, describe=T)
+fast_sf <- st_transform(fast_sf, crs = 5070)
+
+#for this we will use our nlcd land cover raster
+#first we need to mask and crop our raster to each individual mcp
+#we can do this in a simple for loop and put the results in a list
+mcp_lc_stack = list()
+
+for(i in 1:nrow(fast_sf)){
+  mcp.crop <- crop(nlcd, fast_sf[i,])
+  mcp.mask <- mask(mcp.crop, fast_sf[i,])
+  mcp_lc_stack[[i]] <-  mcp.mask
+}
+names(mcp_lc_stack) <- fast_sf$id
+
+#plot one from the list 
+plot(mcp_lc_stack[[1]])
+
+#we can use lapply to run a suite of landscape metrics on indvidual MCPs separately
+#in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig)
+#https://r-spatialecology.github.io/landscapemetrics/
+class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
+
+#say we just want one of the classes, we can filter by class value, pivot, and unlist so we have a dataframe
+#NLCD class value 42 is Evergreen Forest
+evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42))
+evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value))
+evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual")
+evergreen_df
+
+#we can also retain all cover class and output as a csv
+metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))
+class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
+
+#write as a csv to your working directory
+write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
 
 ############### BASIC RESOURSE SELECTION FUCTION (RSF)  EXERCISE  ##############
 

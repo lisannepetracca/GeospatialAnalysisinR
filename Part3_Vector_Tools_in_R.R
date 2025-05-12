@@ -4,7 +4,7 @@
 #this working directory will link to where you have stored the workshop data on your PC
 
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
-setwd("C:/Users/kflp201/OneDrive - Texas A&M University - Kingsville/Geospatial_Analysis_in_R/Geospatial_Analysis_in_R")
+setwd("ADD DIRECTORY NAME HERE")
 
 #and let's load all the libraries we need
 library(terra)
@@ -12,6 +12,8 @@ library(ggplot2)
 library(rnaturalearth)
 library(tidyterra)
 library(tidyverse)
+library(viridis)
+library(mapview)
 
 
 # ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
@@ -21,8 +23,11 @@ library(tidyverse)
 #read in the shapefile with vect()
 PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
-#let's inspect it
-PAs
+#let's look at it interactively
+mapview(PAs)
+
+#let's inspect the attribute table
+head(PAs)
 
 #let's fix wonky characters real quick
 PA_tibble <- PAs %>% as.tibble() %>% select(1,2) %>% mutate_if(is.character, 
@@ -125,11 +130,28 @@ ggplot() +
   #add title and subtitle
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
+#what if we wanted to display PAs as a function of PA size?
+ggplot() + 
+  #adds protected areas, with color by name
+  geom_spatvector(data = BigPAs, aes(fill = area_km2), lwd = 0) +
+  #add color palette
+  scale_fill_viridis()+
+  #adds border of Honduras
+  geom_spatvector(data = honduras, fill=NA, lwd = 0.5) +
+  #label protected areas in legend
+  #note use of bquote for superscript
+  labs(fill = bquote("Area (km"^2*")")) +
+  #add title and subtitle
+  ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
+
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
 #read in the shapefile with vect()
 honduras_roads <- vect("Example_Honduras/Honduras_Roads_1999_CCAD.shp")
 
-#first, let's use perim() to see how long these roads are
+#let's see what these roads look like
+mapview(honduras_roads)
+
+#let's use perim() to see how long these roads are
 honduras_roads$length <- perim(honduras_roads)
 head(honduras_roads)
 
@@ -206,10 +228,8 @@ camlocs_vec <- vect(camlocs, geom=c("x", "y"), crs="EPSG:32616")
 #let's make sure the coordinate system is right
 crs(camlocs_vec, describe=T)
 
-#let's plot the locations to see where they are
-ggplot() +
-  geom_spatvector(data = camlocs_vec) +
-  ggtitle("Map of Camera Trap Locations")
+#let's see where these camera traps are
+mapview(camlocs_vec)
 
 #now let's save this to a .shp if we want to use it in ArcMap 
 writeVector(camlocs_vec,
@@ -323,6 +343,9 @@ PAs$NOMBRE
 
 #first we will use tidyverse to select the PA by name from the greater multipolygon object
 PicoBonito <- PAs %>% filter(NOMBRE == "Pico Bonito-Zona Nucleo")
+
+#let's see where Pico Bonito is
+mapview (PicoBonito)
 
 #let's create 100 random points within the PA for vegetation sampling
 random_points <- spatSample(PicoBonito, size=100, method="random")

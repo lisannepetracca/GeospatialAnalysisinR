@@ -13,6 +13,7 @@ library(ggspatial) #scale bars and north arrows
 library(cowplot) #for insets
 library(tmap) #for interactive map
 library(sf) #to have vectors in interactive map
+library(mapview) #to see geospatial objects interactively
 
 
 # ---- LET'S HAVE SOME FUN WITH MAPPING! ----
@@ -79,6 +80,7 @@ ggplot() +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
   scale_color_manual(values=waterhole_colors)+
   ggtitle("Waterhole types in Hwange NP", subtitle = "2023")+
+  labs(color = 'Waterhole type')+
   coord_sf() 
 
 #we can change other aspects of the legend using theme()
@@ -157,7 +159,7 @@ ggplot()+
 #here, shape=18 corresponds to a diamond
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
-  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=4, shape=18)+
+  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), size=3, shape=18)+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   coord_sf()
 
@@ -171,6 +173,9 @@ ggplot() +
 elev <- rast("Example_Zimbabwe/elev_Hwange.tif")
 
 #and let's see it quickly using the plot function
+mapview(elev)
+
+#another way of displaying, in a non-interactive way
 plot(elev)
 
 #let's see what the raster looks like
@@ -346,7 +351,9 @@ map2 <- ggplot() +
   geom_spatraster(data = elev_manualbrk, aes(fill=elev_brk_manual)) +
   geom_spatvector(data = HwangeNP, color = "black", fill = NA, lwd=2) +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
-  scale_fill_manual(name = "Elevation (m)", values = terrain.colors(4), na.translate=F)+
+  scale_fill_manual(values = terrain.colors(4), name = "Elevation (m)", #changes legend title
+                    labels=c("800 - 900", "900 - 1000", 
+                             "1000 - 1100", "1100 - 1200"), na.translate=F)+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme_void()
 
@@ -361,6 +368,9 @@ plot_grid(map, map2, labels = "AUTO", align="v") #labels = "auto" will use lower
 #our inset map will be an outline of Zimbabwe only
 
 Zimbabwe <- vect("Example_Zimbabwe/Zimbabwe.shp")
+
+#let's look at it
+mapview
 
 #we will call this map "inset"
 inset <- ggplot() +
@@ -377,7 +387,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.28, #you will have to play with these values a bit to get them right!
+            x = -0.265, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 #ok, we are nearly there! 
@@ -402,7 +412,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.28, #you will have to play with these values a bit to get them right!
+            x = -0.265, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 
@@ -415,19 +425,23 @@ ggdraw() +
 #rumor has it tmap supports terra objects now, but my version doesn't!
 #so we have to convert spatvector and spatraster objects to sf and raster classes, respectively, at the moment
 
-tmap_leaflet(                                                      
-  tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster
-    tm_raster(alpha=0.5) #declaring elev a raster; also setting some transparency
-) 
+#the chosen palette is from tmap (yellow to green)
+tmap_leaflet(                                                  
+  tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster 
+  tm_raster(title = "Elevation (m)", alpha=0.5, palette = "YlGn") #declaring elev a raster; also setting some transparency
+  )
 
-#let's add the whole map with waterholes and roads!
+
+  #let's add the whole map with waterholes and roads!
+  #and let's return to default palette
 tmap_leaflet(                                                      
   tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster
-    tm_raster(alpha=0.5) +
+    tm_raster(title = "Elevation (m)", alpha=0.5) +
   tm_shape(st_as_sf(roads_Hwange)) + #convert roads from spatvector to sf
     tm_lines(col="black", lwd=1)+ #declare the roads as lines
   tm_shape(st_as_sf(HwangeNP)) + #convert HwangeNP from spatvector to sf
-    tm_borders(col = "darkgreen", lwd=2)+ #declare Hwange as borders
+    tm_borders(col = "black", lwd=2)+ #declare Hwange as borders
   tm_shape(st_as_sf(waterholes)) + #convert waterholes from spatvector to sf
-    tm_dots(col="gray") #declare waterholes as dots
+    tm_dots(col="darkgray") #declare waterholes as dots
   ) 
+

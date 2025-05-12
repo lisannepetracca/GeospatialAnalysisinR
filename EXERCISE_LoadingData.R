@@ -1,6 +1,7 @@
 library(terra)
-#Change to your working directory path
-setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023/Exercise_1_Answers")
+#Change to your working directory path: JNH: added the below line to paste wd, and changed example to TAMUK computer file paths
+setwd("YOUR WORKING DIRECTORY HERE")
+#Example: setwd("C:/Users/KUJNH012/Documents/OcelotPhd/Rcode/GeospatialAnalysisinR/Exercise_1_LoadingData_Answers")
 
 #load in a .tif image
 ras<-rast("moon.tif")

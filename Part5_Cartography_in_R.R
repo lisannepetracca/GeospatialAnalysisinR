@@ -444,4 +444,4 @@ tmap_leaflet(
   tm_shape(st_as_sf(waterholes)) + #convert waterholes from spatvector to sf
     tm_dots(col="darkgray") #declare waterholes as dots
   ) 
-
+#you can export this as a webpage! (.html)

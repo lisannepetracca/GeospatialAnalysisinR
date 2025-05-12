@@ -17,7 +17,7 @@ setwd("C:/PASTE THE LOCATION OF WHERE YOUR Geospatial_Analysis_in_R FOLDER IS")
 
 #*IF IT ASKS TO RESTART R, YOU CAN SAY YES*** 
 #*IF IT ASKS FOR YOUR CRAN MIRROR YOU CAN SAY CLOUD
-install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis",
+install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis", "mapview",
                    "ggspatial", "cowplot", "sf", "tmap", "rgbif","keyring","ggmap","move2",
                    "adehabitatHR","FedData","raster","tidyverse"),dependencies=T)
 
@@ -41,6 +41,7 @@ library(move2)
 library(adehabitatHR)
 library(FedData)
 library(raster)
+library(mapview)
 
 #we are ALL GOOD on packages if you do not get any error messages after running these "library" lines
 

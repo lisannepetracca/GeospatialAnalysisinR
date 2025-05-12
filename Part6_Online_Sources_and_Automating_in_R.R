@@ -24,6 +24,7 @@ library(mapview)
 library(sf)
 library(landscapemetrics)
 library(tidyverse)
+library(prism)##Added this for for climate download: JNH
 
 ###Fun with loops
 
@@ -204,6 +205,173 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   dev.off()
   if (i==7)break## add this because we don't really need to go thru and map all 84
 }
+
+
+
+
+##########################################################################
+#JNH Comment: Potential replacement for above section
+#Would use climate data instead of elevation and fix basemap issue
+###############################################################################
+
+
+################################################################
+################################################################
+##Downloading shapefiles from URL
+
+#cool! I've just gotten a project to survey the SMAMMALS at TX WMAS
+
+#lets get an idea of where those are
+
+#here we are going to grab elevation and the boundaries of Texas Wildlife Management Areas  
+#we are going to do this using loops to practice
+
+#need to define names for each file to be downloaded to
+tx<-("/TX_WMAs") #Texas WMA boundaries
+rds<-("/roads")#texas roads
+root<- c(tx,rds) #going to bind folder pathways into vector to reference later
+
+#get URLS from internet for zip files
+files<-c(
+  "https://tpwd.texas.gov/gis/resources/wildlife-management-areas.zip",
+  "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip")
+
+
+#write a loop to batch download URLS
+#this might take a few minutes to run
+for (i in 1:length(files)){ #iterate through each instance of files (aka run through 1:3 here)
+  #note I prefer length(files) as opposed to 1:3, because I can add or delete files to root and files and this still works
+  download.file(files[i],paste(wd,root[i],sep="")) #download file from that instance (i) using download.file() function
+  #of files into the working directory with the corresponding root
+}
+
+#look in detail at loop
+i=1 #set iteration 
+files[i] #check files at that iteration
+paste(wd,root[i],sep="") #see where we are storing it
+
+#unzip each file
+for (i in 1:length(files)){ #for each instance in files (1:3 in this case)
+  unzip(paste(wd, root[i], sep=""))} #unzip the folder corresponding to wd + particular root 
+
+#read in TX WMAs, roads shapefiles, & elevation raster
+TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
+roads<-vect("tl_2019_48_prisecroads.shp")
+
+
+#Alternatively read them in from file
+#TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
+#roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
+
+#But hey, it gets hot in Texas! And you want to know the average temperatures for your WMAs.
+#We will now read in data from Oregon State's PRISM service (https://prism.oregonstate.edu/)
+#PRISM only has data available for the continental U.S., however other online databases (such as WorldClim, https://worldclim.org/) have global climate data free to download
+
+
+prism_set_dl_dir(wd) #Tell PRISM where your working directory is
+get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) # Download the climate normals for mean temperature between January and February at 800 m resolution.
+#the term "climate normals" refers to the most recent 30 year average
+
+#Here, we want to select the June temperature normal
+junetemp <- prism_archive_subset(
+  "tmean", "monthly normals", mon = 6, resolution = "800m"
+)
+pd_image(junetemp)
+
+temprast <- pd_to_file(junetemp)#Here, we export he prism data to our working directory
+tmean_rast <- rast(temprast)#We then read the prism file back in as a raster using the terra package
+
+
+
+#since the temperaure is a big file what if we just cropped it to the extent of our
+#WMA layer
+cropped.temp<- crop(tmean_rast,(TX_WMA))
+plot(cropped.temp, type = "continuous")
+plot(TX_WMA,add=T) 
+plot(roads,add=T,col="red")
+
+#let's see how many WMAs I need to survey
+length(TX_WMA$LoName)
+
+#I need to provide maps of all the study areas to give to my techs
+# or was it for permitting? either way
+#wow that's a lot of study site maps to make!
+
+#lets get the extent for the first WMA
+sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
+x.min<-xmin(sub)
+y.min<-ymin(sub)
+x.max<-xmax(sub)
+y.max<-ymax(sub)
+
+
+#We need to convert to a data frame w/ coordinates
+coords<-data.frame(crds(sub))
+geo_dat_coords<-cbind(data.frame(sub),coords)
+
+
+#We can crop our temperature data to the WMA
+cropped_wma <- crop(tmean_rast,(sub))
+
+
+#And map it!
+
+ggplot() + geom_spatraster(data = cropped_wma) + 
+  geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
+               color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
+  coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
+
+
+
+
+#lets create a folder for it
+dir.create(paste0(getwd(),"/SiteMaps"))
+
+#And save it!
+pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
+ggplot() + geom_spatraster(data = cropped_wma) + 
+  geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
+               color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
+  coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
+
+dev.off()
+
+
+#Only 83 more to go!
+#just kidding lets loop it
+
+for (i in 1:length(unique(TX_WMA$LoName))){
+  #lets set the extent for the i th  WMA
+  sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName)[[i]],]
+  x.min<-xmin(sub)
+  y.min<-ymin(sub)
+  x.max<-xmax(sub)
+  y.max<-ymax(sub)
+  
+  
+  #We need to convert to a data frame w/ coordinates
+  coords<-data.frame(crds(sub))
+  geo_dat_coords<-cbind(data.frame(sub),coords)
+
+  #We can crop our temperature data to the WMA
+  cropped_wma <- crop(tmean_rast,(sub))
+  
+  site.map<- ggplot() + geom_spatraster(data = cropped_wma) + 
+    geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
+                 color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
+    coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
+  
+  #and now make and save a new map, make sure to save based on i to not overwrite
+  pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
+  plot(site.map)
+  dev.off()
+  if (i==7)break## add this because we don't really need to go thru and map all 84
+}
+
+
+
+
+
 
 
 ###########################################################

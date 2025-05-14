@@ -24,7 +24,7 @@ library(mapview)
 library(sf)
 library(landscapemetrics)
 library(tidyverse)
-library(prism)##Added this for for climate download: JNH
+library(prism)
 
 ###Fun with loops
 
@@ -63,13 +63,11 @@ if(i=="b"){ #run individual lines of code to check for errors
 #caused issue, run individual lines at that instance to find error
 #can use next to skip iteration based on condition (like if error)
 
-
-
 ################################################################
 ################################################################
 ##Downloading shapefiles from URL
 
-#cool! I've just gotten a project to survey the SMAMMALS at TX WMAS
+#Cool! I've just gotten a project to survey the SMAMMALS at TX WMAS
 
 #lets get an idea of where those are
 
@@ -78,15 +76,15 @@ if(i=="b"){ #run individual lines of code to check for errors
 
 #need to define names for each file to be downloaded to
 tx<-("/TX_WMAs") #Texas WMA boundaries
-ele<-("/ele") #ele stored in new folder ele
 rds<-("/roads")#texas roads
-root<- c(tx,ele,rds) #going to bind folder pathways into vector to reference later
+state<-("/state")
+root<- c(tx,rds,state) #going to bind folder pathways into vector to reference later
 
 #get URLS from internet for zip files
 files<-c(
   "https://tpwd.texas.gov/gis/resources/wildlife-management-areas.zip",
-  "https://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip",
-  "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip")
+  "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip",
+  "https://www.depts.ttu.edu/geospatial/center/Data/TxStateLayers/Tx_Boundaries/Tx_Bndry_General_TIGER5m.zip")
 
 
 #write a loop to batch download URLS
@@ -109,164 +107,18 @@ for (i in 1:length(files)){ #for each instance in files (1:3 in this case)
 #read in TX WMAs, roads shapefiles, & elevation raster
 TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
 roads<-vect("tl_2019_48_prisecroads.shp")
-ele<-rast("mn30_grd")#DONT PLOT,load raster file-this is for the entire US, LARGE FILE!!
-
-#Alternatively read them in from file
-#TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
-#roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
-#ele<-rast("Example_TX/mn30_grd")
-
-#since elevation is a big file what if we just cropped it to the extent of our
-#WMA layer
-cropped.ele<- crop(ele,(TX_WMA))
-plot(cropped.ele, type = "continuous")
-plot(TX_WMA,add=T) 
-plot(roads,add=T,col="red")
-
-#let's see how many WMAs I need to survey
-length(TX_WMA$LoName)
-
-#I need to provide maps of all the study areas to give to my techs
-# or was it for permitting? either way
-#wow that's a lot of study site maps to make!
-
-#lets get the extent for the first WMA
-sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
-x.min<-xmin(sub)
-y.min<-ymin(sub)
-x.max<-xmax(sub)
-y.max<-ymax(sub)
-
-#total extent
-bbox <- c(left = x.min-0.035, bottom = y.min-0.035, right = x.max+0.035, top = y.max+0.035)
-
-#we will use ggmap which has decent basemaps but we need to convert to a data frame w/ coordinates
-coords<-data.frame(crds(sub))
-geo_dat_coords<-cbind(data.frame(sub),coords)
-
-#get out basemap using get_stamenmap -lots of 'maptype' options here!-see ?get_stamenmap
-map<-get_stamenmap(bbox,maptype = "terrain",zoom=13)
-
-#and map it!
-ggmap(map) +
-  geom_polygon(data = geo_dat_coords,aes(x=x,y=y), color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) +
-  theme_bw()+
-  xlab("Longitude")+
-  ylab("Latitude")+
-  theme(axis.text.x = element_text(angle = -25))+
-  coord_sf()
-
-#lets create a folder for it
-dir.create(paste0(getwd(),"/SiteMaps"))
-
-#And save it!
-pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
-ggmap(map) +
-  geom_polygon(data = geo_dat_coords,aes(x=x,y=y), color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) +
-  theme_bw()+
-  xlab("Longitude")+
-  ylab("Latitude")+
-  theme(axis.text.x = element_text(angle = -25))+
-  coord_sf()
-dev.off()
+state_bound<-vect("Tx_Bndry_General_TIGER5m.shp")
 
 
-#Only 83 more to go!
-#just kidding lets loop it
-
-for (i in 1:length(unique(TX_WMA$LoName))){
-  #lets set the extent for the i th  WMA
-  sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName)[[i]],]
-  x.min<-xmin(sub)
-  y.min<-ymin(sub)
-  x.max<-xmax(sub)
-  y.max<-ymax(sub)
-  
-  #total extent
-  bbox <- c(left = x.min-0.015, bottom = y.min-0.015, right = x.max+0.015, top = y.max+0.015)
-  
-  #we will use ggmap which has decent basemaps but we need to convert to a data frame w/ coordinates
-  coords<-data.frame(crds(sub))
-  geo_dat_coords<-cbind(data.frame(sub),coords)
-  
-  #get out basemap using get_stamenmap -lots of options here!
-  map<-get_stamenmap(bbox,maptype = "terrain",zoom=13)
-  
-  site.map<- ggmap(map) +
-    geom_polygon(data = geo_dat_coords,aes(x=x,y=y), color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) +
-    theme_bw()+
-    xlab("Longitude")+
-    ylab("Latitude")+
-    theme(axis.text.x = element_text(angle = -25))+
-    coord_sf()
-  #and now make and save a new map, make sure to save based on i to not overwrite
-  pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
-  plot(site.map)
-  dev.off()
-  if (i==7)break## add this because we don't really need to go thru and map all 84
-}
-
-
-
-
-##########################################################################
-#JNH Comment: Potential replacement for above section
-#Would use climate data instead of elevation and fix basemap issue
-###############################################################################
-
-
-################################################################
-################################################################
-##Downloading shapefiles from URL
-
-#cool! I've just gotten a project to survey the SMAMMALS at TX WMAS
-
-#lets get an idea of where those are
-
-#here we are going to grab elevation and the boundaries of Texas Wildlife Management Areas  
-#we are going to do this using loops to practice
-
-#need to define names for each file to be downloaded to
-tx<-("/TX_WMAs") #Texas WMA boundaries
-rds<-("/roads")#texas roads
-root<- c(tx,rds) #going to bind folder pathways into vector to reference later
-
-#get URLS from internet for zip files
-files<-c(
-  "https://tpwd.texas.gov/gis/resources/wildlife-management-areas.zip",
-  "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip")
-
-
-#write a loop to batch download URLS
-#this might take a few minutes to run
-for (i in 1:length(files)){ #iterate through each instance of files (aka run through 1:3 here)
-  #note I prefer length(files) as opposed to 1:3, because I can add or delete files to root and files and this still works
-  download.file(files[i],paste(wd,root[i],sep="")) #download file from that instance (i) using download.file() function
-  #of files into the working directory with the corresponding root
-}
-
-#look in detail at loop
-i=1 #set iteration 
-files[i] #check files at that iteration
-paste(wd,root[i],sep="") #see where we are storing it
-
-#unzip each file
-for (i in 1:length(files)){ #for each instance in files (1:3 in this case)
-  unzip(paste(wd, root[i], sep=""))} #unzip the folder corresponding to wd + particular root 
-
-#read in TX WMAs, roads shapefiles, & elevation raster
-TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
-roads<-vect("tl_2019_48_prisecroads.shp")
-
-
-#Alternatively read them in from file
+#Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
 #roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
 
-#But hey, it gets hot in Texas! And you want to know the average temperatures for your WMAs.
+
+#Now you have all of the roads and WMAs in Texas downloaded
+#But hey, it gets hot in Texas! Let's use an online climate database to show temps across the state in June
 #We will now read in data from Oregon State's PRISM service (https://prism.oregonstate.edu/)
 #PRISM only has data available for the continental U.S., however other online databases (such as WorldClim, https://worldclim.org/) have global climate data free to download
-
 
 prism_set_dl_dir(wd) #Tell PRISM where your working directory is
 get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) # Download the climate normals for mean temperature between January and February at 800 m resolution.
@@ -276,20 +128,22 @@ get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) # Download the cl
 junetemp <- prism_archive_subset(
   "tmean", "monthly normals", mon = 6, resolution = "800m"
 )
-pd_image(junetemp)
+
 
 temprast <- pd_to_file(junetemp)#Here, we export he prism data to our working directory
 tmean_rast <- rast(temprast)#We then read the prism file back in as a raster using the terra package
 
 
-
-#since the temperaure is a big file what if we just cropped it to the extent of our
+#since our temperature raster is a big file what if we just crop it to the extent of our
 #WMA layer
-cropped.temp<- crop(tmean_rast,(TX_WMA))
-plot(cropped.temp, type = "continuous")
+mask.temp<- mask(tmean_rast, state_bound)
+plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
 plot(TX_WMA,add=T) 
 plot(roads,add=T,col="red")
 
+
+
+#Now lets move on to the individual WMAs
 #let's see how many WMAs I need to survey
 length(TX_WMA$LoName)
 
@@ -297,7 +151,7 @@ length(TX_WMA$LoName)
 # or was it for permitting? either way
 #wow that's a lot of study site maps to make!
 
-#lets get the extent for the first WMA
+#lets get the extent for the first WMA (Cedar Creek WMA - Big Island Uni)
 sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
 x.min<-xmin(sub)
 y.min<-ymin(sub)
@@ -309,19 +163,20 @@ y.max<-ymax(sub)
 coords<-data.frame(crds(sub))
 geo_dat_coords<-cbind(data.frame(sub),coords)
 
+#Excellent, but let's say you want to give your techs an idea of the landscape in each unit
+#Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
+nlcd_wma<-get_nlcd(template = sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
 
-#We can crop our temperature data to the WMA
-cropped_wma <- crop(tmean_rast,(sub))
+#Now project it into the same crs as our the wma
+nlcd_wma <- project(nlcd_wma, "EPSG:4269")
 
 
 #And map it!
 
-ggplot() + geom_spatraster(data = cropped_wma) + 
+ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
-               color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
-  coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
-
-
+               color = "black", fill = NA, alpha=0.5, lwd=1) + 
+  coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
 
 
 #lets create a folder for it
@@ -329,10 +184,10 @@ dir.create(paste0(getwd(),"/SiteMaps"))
 
 #And save it!
 pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
-ggplot() + geom_spatraster(data = cropped_wma) + 
+ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
-               color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
-  coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
+               color = "black", fill = NA, alpha=0.5, lwd=1) + 
+  coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
 
 dev.off()
 
@@ -352,14 +207,22 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   #We need to convert to a data frame w/ coordinates
   coords<-data.frame(crds(sub))
   geo_dat_coords<-cbind(data.frame(sub),coords)
-
-  #We can crop our temperature data to the WMA
-  cropped_wma <- crop(tmean_rast,(sub))
   
-  site.map<- ggplot() + geom_spatraster(data = cropped_wma) + 
+  #Excellent, but let's say you want to give your techs an idea of the landcover
+  #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
+  nlcd_wma<-get_nlcd(template = sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
+  
+  #Now project it into the same crs as our the wma
+  nlcd_wma <- project(nlcd_wma, "EPSG:4269")
+  
+  #And map it!
+  
+  site.map <- ggplot() + geom_spatraster(data = nlcd_wma) + 
     geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
-                 color = "black", fill = "darkseagreen4",alpha=0.5, lwd=1) + 
-    coord_sf(xlim = c(x.min -.004, x.max + .004), ylim = c(y.min - 0.004, y.max + .004))
+                 color = "black", fill = NA, alpha=0.5, lwd=1) + 
+    coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
+  
+  
   
   #and now make and save a new map, make sure to save based on i to not overwrite
   pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
@@ -367,11 +230,6 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   dev.off()
   if (i==7)break## add this because we don't really need to go thru and map all 84
 }
-
-
-
-
-
 
 
 ###########################################################
@@ -696,54 +554,6 @@ for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges 
   #ggsave(paste0("MCP_95_", fisher_ids[i], ".pdf"))  #example
 }
 
-######################################################################################################################################
-#### MMS COMMENT: POTENTIAL ADDITION; LANDSCAPE METRICS OF MCPs
-######################################################################################################################################
-
-#what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
-#we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
-
-#let's get nlcd land cover using the FedData package again
-nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
-
-#we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
-crs(nlcd, describe=T)
-fast_sf <- st_transform(fast_sf, crs = 5070)
-
-#for this we will use our nlcd land cover raster
-#first we need to mask and crop our raster to each individual mcp
-#we can do this in a simple for loop and put the results in a list
-mcp_lc_stack = list()
-
-for(i in 1:nrow(fast_sf)){
-  mcp.crop <- crop(nlcd, fast_sf[i,])
-  mcp.mask <- mask(mcp.crop, fast_sf[i,])
-  mcp_lc_stack[[i]] <-  mcp.mask
-}
-names(mcp_lc_stack) <- fast_sf$id
-
-#plot one from the list 
-plot(mcp_lc_stack[[1]])
-
-#we can use lapply to run a suite of landscape metrics on indvidual MCPs separately
-#in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig)
-#https://r-spatialecology.github.io/landscapemetrics/
-class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
-
-#say we just want one of the classes, we can filter by class value, pivot, and unlist so we have a dataframe
-#NLCD class value 42 is Evergreen Forest
-evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42))
-evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value))
-evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual")
-evergreen_df
-
-#we can also retain all cover class and output as a csv
-metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))
-class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
-
-#write as a csv to your working directory
-write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
-
 ############### BASIC RESOURSE SELECTION FUCTION (RSF)  EXERCISE  ##############
 
 #okay we have our spatial data squared away- now we need to prep our data for RSF - 
@@ -828,3 +638,56 @@ plot(rsf.preds)
 for (i in 1:length(l)){
   plot((get(l[i])),lwd=3,add=T)
 }
+
+######################################################################################################################################################################
+#### BONUS (if time allows): LANDSCAPE METRICS OF MCPs   #############################################################################################################
+######################################################################################################################################################################
+
+#what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
+#we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
+#https://r-spatialecology.github.io/landscapemetrics/
+
+#let's get nlcd land cover using the FedData package again
+nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
+
+#we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
+crs(nlcd, describe=T)
+fast_sf <- st_transform(fast_sf, crs = 5070) #NLCD uses EPSG:5070 that is a NAD83 datum and Albers projection
+
+#for this we will use our nlcd land cover raster
+#first we need to mask and crop our raster to each individual mcp
+#we can do this in a simple for loop and put the results in a list
+mcp_lc_stack = list() #create an empty list to store our individual mcps
+
+for(i in 1:nrow(fast_sf)){
+  mcp.crop <- crop(nlcd, fast_sf[i,]) #crop nlcd raster to the ith row in mcp
+  mcp.mask <- mask(mcp.crop, fast_sf[i,]) #mask nlcd raster to the ith row in mcp
+  mcp_lc_stack[[i]] <-  mcp.mask #set ith element of list to masked mcp
+}
+names(mcp_lc_stack) <- fast_sf$id #reassign individual names to our list elements
+
+#plot one from the list for an example
+plot(mcp_lc_stack[[1]])
+
+#we can use lapply to run a suite of landscape metrics on individual MCPs separately
+#lapply will run a function on every element of a list (like a for loop, but generally quicker processing)
+#in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig, i.e., connectivity)
+#to do this we call the calculate_lsm() function and using c() input all of the metrics we would like to calculate
+#https://r-spatialecology.github.io/landscapemetrics/
+class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
+
+#say we just want one of the classes, we can filter by class value, pivot, and unlist so we have a dataframe
+#NLCD class value 42 is Evergreen Forest
+evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42)) #apply the filter() function to each element in the list
+#pivot to a wide format so each individual mcp is a row and columns are the different metrics
+evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value)) 
+evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual") #combines our list elements into a dataframe
+evergreen_df
+
+#we can also retain all cover class and output as a csv
+metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))
+class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
+
+#write as a csv to your working directory
+write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
+

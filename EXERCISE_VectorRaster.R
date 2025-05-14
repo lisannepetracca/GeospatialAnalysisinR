@@ -4,7 +4,7 @@
 #(3) use "resample" to align distance to waterhole (Dist_Waterhole_Hwange.tif)
 #    and elevation (elev_Hwange.tif)
 #(4) create raster stack from these two rasters
-#(5) extract mean values from raster stack for 500-m  buffers around the 100 random points
+#(5) extract mean values from raster stack for 1000-m  buffers around the 100 random points
 #(6) save as .csv
 
 setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023/")

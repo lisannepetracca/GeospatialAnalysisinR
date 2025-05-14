@@ -11,12 +11,16 @@ setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 
 library(terra)
 library(ggplot2)
+library(mapview)
 
 #read in PAs
 PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
 #select "La Tigra-nucleo" in Honduras
 Tigra <- PAs[PAs$NOMBRE=="La Tigra-nucleo",]
+
+#visualize it interactively
+mapview(Tigra)
 
 #determine area 
 area_km2 <- expanse(Tigra, unit="km")

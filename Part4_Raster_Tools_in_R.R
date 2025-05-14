@@ -71,6 +71,9 @@ crs(roads, describe=T)
 #How can we convert to WGS 1984 UTM Zone 35S in order to match the waterholes?
 roads_UTM <- project(roads, "EPSG:32735")
 
+
+# ---- BASIC RASTER STATISTICS ----
+
 #OK now time for a raster! Let's read in the elevation (it's an aster image)
 elev <- rast("Example_Zimbabwe/aster_image_20160624.tif") 
 
@@ -106,6 +109,9 @@ Hwange_WGS <- project(Hwange, "EPSG:4326")
 #add=T adds the Hwange boundary to the existing plot 
 plot(Hwange_WGS,add=T)
 
+
+# ---- USING CROP AND MASK TOOLS ----
+
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's crop it to make raster processing go a bit faster
 elev_crop <- crop(elev, Hwange_WGS)
@@ -116,7 +122,7 @@ plot(Hwange_WGS,add=T, lwd = 5)
 
 #Quick comparison between Cropping and Masking 
 #Cropping: Removing rows and/or columns to reduce the raster extent
-#Masking: Setting pixels outside of an area of interest to NA
+#Masking: Setting pixels outside of an area of interest to NA (similar to "SetNull" in ArcMap)
 
 #lets try a mask on the elev layer using Hwange_WGS
 elev_mask <- mask(elev, Hwange_WGS)
@@ -193,6 +199,9 @@ veg_crop <- crop(percveg, elev_crop_UTM)
 plot(veg_crop)
 plot(Hwange, border="black",col=NA,lwd=5,add=T)
 
+
+# ---- MAKING A RASTER STACK ----
+
 #what happens when we try to make a raster stack of vegetation and elevation?
 stack <- c(veg_crop, elev_crop_UTM)
 #ERROR ab different extents!
@@ -209,6 +218,9 @@ elev_crop_match <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 
 stack <- c(veg_crop, elev_crop_match)
 #yay, it works now!
+
+
+# ---- USING RECLASSIFY ----
 
 #a quick aside: let's say that we'd like to have four categories for elevation rather than continuous values
 #for example, 800-900 meters = 8, 900-1000 meters = 9, etc.
@@ -234,6 +246,9 @@ roads_hwange <- crop(roads_UTM, Hwange)
 
 #let's plot the roads
 plot(roads_hwange)
+
+
+# ---- BUILDING DISTANCE LAYERS ----
 
 #for distance to linear features (roads), let's use distance()
 #first, we create an empty raster of a certain resolution & extent such that we can *eventually* store our distances there
@@ -262,6 +277,10 @@ plot(waterholes, col="black",lwd=2,add=T)
 #let's write this to raster to we can use it later
 writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
 
+
+
+# ---- NEIGHBORHOOD STATISTICS ----
+
 #quick foray into neighborhood statistics
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
 #we are using 15 cells here to show how the values are "smoothed out" visually
@@ -279,6 +298,10 @@ stack
 #names are ambiguous. let's assign names
 names(stack) <- c("perc_veg", "elev", "dist_road", "dist_waterhole")
 stack
+
+
+
+# ---- USING EXTRACT ----
 
 #cool. now we will use extract to extract values for each of our 1000 random points
 #from each of our four raster layers
@@ -312,9 +335,10 @@ plot(stack_import)
 elev <- subset(stack_import,subset=2)
 plot(elev)
 
-##############################################################################################################################################################
+
+
 ######################## BONUS (if time allows): short introduction to point pattern process and interpolation ###############################################
-##############################################################################################################################################################
+
 #we are going to do a quick look at spatial interpolation methods
 #let's go back to our watering holes and say we sampled the water and calculated parasite density and are now interested in predicting parasite density in unsampled locations
 waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object

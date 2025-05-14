@@ -696,54 +696,6 @@ for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges 
   #ggsave(paste0("MCP_95_", fisher_ids[i], ".pdf"))  #example
 }
 
-######################################################################################################################################
-#### MMS COMMENT: POTENTIAL ADDITION; LANDSCAPE METRICS OF MCPs
-######################################################################################################################################
-
-#what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
-#we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
-
-#let's get nlcd land cover using the FedData package again
-nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
-
-#we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
-crs(nlcd, describe=T)
-fast_sf <- st_transform(fast_sf, crs = 5070)
-
-#for this we will use our nlcd land cover raster
-#first we need to mask and crop our raster to each individual mcp
-#we can do this in a simple for loop and put the results in a list
-mcp_lc_stack = list()
-
-for(i in 1:nrow(fast_sf)){
-  mcp.crop <- crop(nlcd, fast_sf[i,])
-  mcp.mask <- mask(mcp.crop, fast_sf[i,])
-  mcp_lc_stack[[i]] <-  mcp.mask
-}
-names(mcp_lc_stack) <- fast_sf$id
-
-#plot one from the list 
-plot(mcp_lc_stack[[1]])
-
-#we can use lapply to run a suite of landscape metrics on indvidual MCPs separately
-#in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig)
-#https://r-spatialecology.github.io/landscapemetrics/
-class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
-
-#say we just want one of the classes, we can filter by class value, pivot, and unlist so we have a dataframe
-#NLCD class value 42 is Evergreen Forest
-evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42))
-evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value))
-evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual")
-evergreen_df
-
-#we can also retain all cover class and output as a csv
-metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))
-class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
-
-#write as a csv to your working directory
-write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
-
 ############### BASIC RESOURSE SELECTION FUCTION (RSF)  EXERCISE  ##############
 
 #okay we have our spatial data squared away- now we need to prep our data for RSF - 
@@ -828,3 +780,56 @@ plot(rsf.preds)
 for (i in 1:length(l)){
   plot((get(l[i])),lwd=3,add=T)
 }
+
+######################################################################################################################################################################
+#### BONUS (if time allows): LANDSCAPE METRICS OF MCPs   #############################################################################################################
+######################################################################################################################################################################
+
+#what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
+#we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
+#https://r-spatialecology.github.io/landscapemetrics/
+
+#let's get nlcd land cover using the FedData package again
+nlcd<-get_nlcd(template = fisher , year = 2016, dataset = "landcover", label = "fisher Land", force.redo = T)
+
+#we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
+crs(nlcd, describe=T)
+fast_sf <- st_transform(fast_sf, crs = 5070) #NLCD uses EPSG:5070 that is a NAD83 datum and Albers projection
+
+#for this we will use our nlcd land cover raster
+#first we need to mask and crop our raster to each individual mcp
+#we can do this in a simple for loop and put the results in a list
+mcp_lc_stack = list() #create an empty list to store our individual mcps
+
+for(i in 1:nrow(fast_sf)){
+  mcp.crop <- crop(nlcd, fast_sf[i,]) #crop nlcd raster to the ith row in mcp
+  mcp.mask <- mask(mcp.crop, fast_sf[i,]) #mask nlcd raster to the ith row in mcp
+  mcp_lc_stack[[i]] <-  mcp.mask #set ith element of list to masked mcp
+}
+names(mcp_lc_stack) <- fast_sf$id #reassign individual names to our list elements
+
+#plot one from the list for an example
+plot(mcp_lc_stack[[1]])
+
+#we can use lapply to run a suite of landscape metrics on individual MCPs separately
+#lapply will run a function on every element of a list (like a for loop, but generally quicker processing)
+#in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig, i.e., connectivity)
+#to do this we call the calculate_lsm() function and using c() input all of the metrics we would like to calculate
+#https://r-spatialecology.github.io/landscapemetrics/
+class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
+
+#say we just want one of the classes, we can filter by class value, pivot, and unlist so we have a dataframe
+#NLCD class value 42 is Evergreen Forest
+evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42)) #apply the filter() function to each element in the list
+#pivot to a wide format so each individual mcp is a row and columns are the different metrics
+evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value)) 
+evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual") #combines our list elements into a dataframe
+evergreen_df
+
+#we can also retain all cover class and output as a csv
+metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))
+class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
+
+#write as a csv to your working directory
+write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
+

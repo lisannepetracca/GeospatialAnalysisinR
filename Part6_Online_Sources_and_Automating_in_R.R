@@ -6,14 +6,11 @@ setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 #get the working directory and save as an object wd to access later
 wd<-getwd()
 
-#install.packages(c("terra","tidyterra","ggplot2", "viridis","ggspatial","rnaturalearth","rnaturalearthdata"))
-
 library(terra)
 library(tidyterra)
 library(ggplot2)
 library(viridis)
 library(ggspatial)
-library(rnaturalearth)
 library(rgbif)
 library(ggmap)
 library(move2)
@@ -25,8 +22,12 @@ library(sf)
 library(landscapemetrics)
 library(tidyverse)
 library(prism)
+library(hexbin)
+library(rnaturalearthdata)
+library(keyring)
 
-###Fun with loops
+
+# ---- USING LOOPS ----
 
 #make a simple loop printing every instance (i) in 1:10
 for (i in 1:10){
@@ -63,9 +64,9 @@ if(i=="b"){ #run individual lines of code to check for errors
 #caused issue, run individual lines at that instance to find error
 #can use next to skip iteration based on condition (like if error)
 
-################################################################
-################################################################
-##Downloading shapefiles from URL
+
+
+# ---- DOWNLOADING SHAPEFILES FROM URL ----
 
 #Cool! I've just gotten a project to survey the SMAMMALS at TX WMAS
 
@@ -85,7 +86,6 @@ files<-c(
   "https://tpwd.texas.gov/gis/resources/wildlife-management-areas.zip",
   "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip",
   "https://www.depts.ttu.edu/geospatial/center/Data/TxStateLayers/Tx_Boundaries/Tx_Bndry_General_TIGER5m.zip")
-
 
 #write a loop to batch download URLS
 #this might take a few minutes to run
@@ -109,39 +109,45 @@ TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is 
 roads<-vect("tl_2019_48_prisecroads.shp")
 state_bound<-vect("Tx_Bndry_General_TIGER5m.shp")
 
-
 #Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
 #roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
 
 
+
+# ---- WORKING WITH PRISM CLIMATE DATA ----
+
 #Now you have all of the roads and WMAs in Texas downloaded
 #But hey, it gets hot in Texas! Let's use an online climate database to show temps across the state in June
 #We will now read in data from Oregon State's PRISM service (https://prism.oregonstate.edu/)
-#PRISM only has data available for the continental U.S., however other online databases (such as WorldClim, https://worldclim.org/) have global climate data free to download
+#PRISM only has data available for the continental U.S.; however, other online databases 
+#(such as WorldClim, https://worldclim.org/) have global climate data free to download
 
 prism_set_dl_dir(wd) #Tell PRISM where your working directory is
-get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) # Download the climate normals for mean temperature between January and February at 800 m resolution.
+# Download the climate normals for mean temperature between January and February at 800 m resolution
+get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE)
 #the term "climate normals" refers to the most recent 30 year average
+#this can take a minute or two
 
 #Here, we want to select the June temperature normal
 junetemp <- prism_archive_subset(
   "tmean", "monthly normals", mon = 6, resolution = "800m"
 )
 
-
 temprast <- pd_to_file(junetemp)#Here, we export he prism data to our working directory
 tmean_rast <- rast(temprast)#We then read the prism file back in as a raster using the terra package
 
-
 #since our temperature raster is a big file what if we just crop it to the extent of our
 #WMA layer
-mask.temp<- mask(tmean_rast, state_bound)
+
+mask.temp<- mask(tmean_rast, state_bound) #IGNORE WARNING
 plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
-plot(TX_WMA,add=T) 
-plot(roads,add=T,col="red")
+plot(roads, add=T,col="black")
+plot(TX_WMA, add=T, border=NA, col="orange") 
 
 
+
+# ---- WORKING WITH NLCD LAND COVER DATA ----
 
 #Now lets move on to the individual WMAs
 #let's see how many WMAs I need to survey
@@ -158,14 +164,14 @@ y.min<-ymin(sub)
 x.max<-xmax(sub)
 y.max<-ymax(sub)
 
-
 #We need to convert to a data frame w/ coordinates
 coords<-data.frame(crds(sub))
 geo_dat_coords<-cbind(data.frame(sub),coords)
 
 #Excellent, but let's say you want to give your techs an idea of the landscape in each unit
 #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
-nlcd_wma<-get_nlcd(template = sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
+nlcd_wma <- get_nlcd(template = sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T) 
+#THE ABOVE LINE MAY TAKE A WHILE
 
 #Now project it into the same crs as our the wma
 nlcd_wma <- project(nlcd_wma, "EPSG:4269")
@@ -232,8 +238,9 @@ for (i in 1:length(unique(TX_WMA$LoName))){
 }
 
 
-###########################################################
-######################GBIF Exercise ###Map species
+
+# ---- USING SPECIES OCCURRENCE DATA FROM GBIF ----
+
 
 #establish search criteria - searching for family Canidae
 #many search criteria available check out the rgbif guide
@@ -242,7 +249,7 @@ key <- name_backbone(name = 'Canidae', rank='family')$usageKey
 #run search and download 2000 records with coordinates -->
 ###Download takes a moment so skip to line 229 if uploading csv
 
-Canidae<-occ_search(taxonKey=key,limit=2000,hasCoordinate = TRUE)#this takes a bit of time
+Canidae<-occ_search(taxonKey=key,limit=2000,hasCoordinate = TRUE) #this takes a bit of time
 
 #inspect Canidae -returns output summary
 Canidae
@@ -254,36 +261,39 @@ names(Canidae)
 write.csv(Canidae$data,"Canidae_occ.csv")
 
 #data is in tibble which is a modified data frame- lets change it to data frame to be consistent and store it in candat
-can<-data.frame(Canidae$data)
+canid_data <-data.frame(Canidae$data)
 
-#can<-read.csv("Example_Canidae/Canidae_occ.csv") #OR JUST READ IN CSV
+#canid_data<-read.csv("Example_Canidae/Canidae_occ.csv") #OR JUST READ IN CSV
 
 #look at data
-summary(can)
-names(can)
-str(can)
+summary(canid_data)
+names(canid_data)
+str(canid_data)
 #gbif data has too many columns, we want:
 #lat=decimalLatitude
 #long=decimalLongitude
 #species=species
 
-#convert data frame to simple feature
-candat<-vect(can, geom = c("decimalLongitude" ,"decimalLatitude"), crs = ("EPSG:4326"))
+#convert data frame to SpatVector
+canid_vec <-vect(canid_data, geom = c("decimalLongitude" ,"decimalLatitude"), crs = ("EPSG:4326"))
 
 #lets look at the data colored by species
-plot(candat,col=as.factor(candat$species),pch=16)
+plot(canid_vec,col=as.factor(canid_vec$species),pch=16)
 
 #Well that is not a great looking map, lets make better ones using ggplot 
 
 #load global country boundaries shapefile
-world <- ne_countries(scale = "medium", returnclass = "sf")
+world_sf <- ne_countries(scale = "medium", returnclass = "sf")
 
-#Or read in directly (L252) and run line 254
+#let's convert to spatvector
+world <- vect(world_sf)
+
+#Or read in directly below
 #world<-st_read("Example_Canidae/world.shp")
   #reading in at simple features as that is how ne_countries downloads
 #world$name<-world$CNTRY_NAME
 
-##plot the world
+#plot the world
 ggplot(data = world)+
   #plot continents
   geom_spatvector(color = "black", fill = "antiquewhite", lwd=0.5) +
@@ -317,7 +327,7 @@ ggplot(data = world)+
   geom_spatvector(color = "black", fill = "antiquewhite", lwd=0.5) +
   #convert points to binned hexagons
   stat_summary_hex(
-    data=can,aes(
+    data=canid_data,aes(
       x=decimalLongitude,
       y=decimalLatitude,
       z=speciesKey),
@@ -342,29 +352,22 @@ ggplot(data = world)+
   scale_x_continuous(limits = c(-150,150), breaks=(seq(-180,180,50)))+
   scale_y_continuous(limits = c(-65,75), breaks=(seq(-180,180,50)))+
   coord_sf()
-##warning ok just plotting at smaller scale than data
+#warning ok just plotting at smaller scale than data
 
 
-#########For US only and add labels
+#For US only and add labels
 
 #make labels
 world_points <- centroids(world,inside=T)
-
-#crud what is a MULTIPOLYGON? this is a sf object called MULTIPOLYGON - 
-#lets make 'world' a spatvector object and try again
-world.sv<-vect(world)
-
-#what is we want to add labels based on country name?
-world_points <- centroids(world.sv,inside=T)
 
 #get coordinates
 world_points$x<-crds(world_points)[,1]
 world_points$y<-crds(world_points)[,2]
 
 #and plot with labels scaling to just the US
-ggplot(data = world.sv)+
+ggplot(data = world)+
   geom_spatvector(color = "black", fill = "antiquewhite", lwd=0.5) +
-  stat_summary_hex(data=can,aes(x=decimalLongitude,y=decimalLatitude,z=speciesKey),
+  stat_summary_hex(data=canid_data,aes(x=decimalLongitude,y=decimalLatitude,z=speciesKey),
                    fun=function(z){length(unique(z))},
                    binwidth=c(2,2))+
   scale_fill_viridis("Richness",option='G',begin=0.25,end=.85,alpha=0.75)+
@@ -394,10 +397,10 @@ ggplot(data = world.sv)+
 ##warning ok just plotting at smaller scale than data
 
 
-####map locations by species
+# Map locations by species
 
-for (i in 1:length(unique(can$species))) {  #running through 1: number of species
-  sub<-candat[candat$species==unique(candat$species)[i],] #for species i, subset candat to only that species's data
+for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of species
+  sub<-canid_vec[canid_vec$species==unique(canid_vec$species)[i],] #for species i, subset candat to only that species's data
   map<-  ggplot()+
     geom_sf(data = world, color = "black", fill = "white", size=0.5) +
     geom_sf(data=sub, color = i,alpha=0.5)+
@@ -414,14 +417,11 @@ for (i in 1:length(unique(can$species))) {  #running through 1: number of specie
 
 
 
-#######################################################################################
-###########################  MOVEBANK #################################################
-
-#UNLESS YOU HAVE A MOVEBANK USERNAME AND PASSWORD SKIP TO LINE 416!!!!!
+# ---- USING MOVEMENT DATA FROM MOVEBANK ----
 
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
-#study ID to direclty download open access data using the movebank_download_study() function:
+#study ID to directly download open access data using the movebank_download_study() function:
 movebank_store_credentials(username="mmsmith" ,password ="eEwqu9S$E5m@r")
 s<-	movebank_download_study(6925808)
 
@@ -459,8 +459,7 @@ mapview::mapview(fisher, zcol = "individual_local_identifier")
 
 #Excellent! Now we can move on to home ranges
 
-# MMS COMMENT: sf does have an mcp function, wonder if it is worth just using sf instead so no dont need the spatialpolygondataframe
-#####calculate home ranges for individuals
+#Calculate home ranges for individuals
 #we are going to use minimum convex polygons to estimate the home range for each individual using the 
 #mcp() function in adehabitatHR. This package requires sp classes so we need to transform our data
 #from spatVector to sp. This package has some other useful movement statistics - check it out!
@@ -521,7 +520,7 @@ canopy <- project(canopy, crs(fisher))
 canopy <- crop(canopy, fisher)
 plot(canopy)
 
-#let's also pull in a elevation raster using FedData
+#let's also pull in an elevation raster using FedData
 elev <- get_ned(template =fisher, label = "fisher elev", force.redo = T)
 elev <- project(elev, canopy)
 elev <- crop(elev, canopy)
@@ -554,7 +553,7 @@ for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges 
   #ggsave(paste0("MCP_95_", fisher_ids[i], ".pdf"))  #example
 }
 
-############### BASIC RESOURSE SELECTION FUCTION (RSF)  EXERCISE  ##############
+# ---- RESOURCE SELECTION FUNCTION ANALYSIS ----
 
 #okay we have our spatial data squared away- now we need to prep our data for RSF - 
 # we have used points, these are our GPS data-lets create a dummy variable 'used' and input a 1 
@@ -639,9 +638,9 @@ for (i in 1:length(l)){
   plot((get(l[i])),lwd=3,add=T)
 }
 
-######################################################################################################################################################################
+
+
 #### BONUS (if time allows): LANDSCAPE METRICS OF MCPs   #############################################################################################################
-######################################################################################################################################################################
 
 #what if we are interested in the landscape composition, configuration, or connectivity within our MCPs?
 #we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 

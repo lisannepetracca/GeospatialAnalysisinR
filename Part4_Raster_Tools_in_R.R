@@ -2,7 +2,6 @@
 
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
-setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 
 #let's load all the libraries we need
@@ -13,6 +12,7 @@ library(mapview)
 library(viridis)
 library(spatstat)
 library(gstat)
+library(sf)
 
 # ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
 
@@ -30,6 +30,7 @@ Hwange_pts <- spatSample(Hwange, size=1000, method="random")
 
 #To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
 #Multiple spatial datasets can be added to one plot using a '+' sign between mapview call or using lists
+#We can also adjust our visualization by using a few different commands. Color = fill of color of object, alpha.regions = transparency, and lwd = thickness of the polygon outline
 mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) + mapview(Hwange_pts)
 
 #what does this look like using ggplot?
@@ -83,7 +84,7 @@ elev
 summary(elev)    #WARNING MESSAGE IS OK
 
 #if you want it to use ALL the values in the dataset, use
-summary(values(elev))#wrap our summary function with values() from the terra package
+summary(values(elev)) #wrap our summary function with values() from the terra package
 #not much of a difference, eh? 
 #we may notice larger changes w bigger rasters
 
@@ -311,72 +312,110 @@ plot(stack_import)
 elev <- subset(stack_import,subset=2)
 plot(elev)
 
-######################################################################################################################################
-######################## POTENTIAL NEW EXAMPLE: Point pattern process and interpolation ##############################################
-######################################################################################################################################
+##############################################################################################################################################################
+######################## BONUS (if time allows): short introduction to point pattern process and interpolation ###############################################
+##############################################################################################################################################################
 #we are going to do a quick look at spatial interpolation methods
-#let's go back to our watering holes and say we sampled the water for VAR (need a story here)
+#let's go back to our watering holes and say we sampled the water and calculated parasite density and are now interested in predicting parasite density in unsampled locations
 waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object
 
 #first let's simulate some data with a spatially autocorrelated structure
+#to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
+#we need to specify a model function, and in this case, we are using an Exponential function
+#you also need to describe the shape of the function using the sill, range, and nugget parameters
+#sill: maximum variability between two points
+#range: the lag distance where the variogram levels off. two points are not spatially correlated if separated by a distance greater than the range.
+#nugget: this represents small scale variability or y-intercept
 vgm_model <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
-sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 0, model = vgm_model, nmax = 20)
+#next we need to create a gstat object and tell it a few different inputs to make our predictions
+#formula: this defines our dependent variable as a an intercept only model
+#locations: spatial data locations
+#since we are not conditioning our model on observed data, we need to tell the function that it is an unconditional simulation using dummy = TRUE and it is intercept only with beta = 0
+#model: our generated variogram model that describes the spatial autocorrelation between our points
+#nmax: set the number of nearest observations that should be used for our simulation
+sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 1, model = vgm_model, nmax = 20)
+#we can then predict our new variable to our locations of watering holes
 sim_result <- predict(sim_gstat, newdata = waterholes_sf, nsim = 1)
-waterholes_sf$new_var <- sim_result$sim1 #create new waterhole variable
+#we assign our simulated results to a new data column in our waterholes sf object
+waterholes_sf$para_den <- sim_result$sim1 #create new waterhole variable that reflects the parasite density at watering holes (para_den)
 
 #let's look at the spatial pattern
-mapview::mapview(waterholes_sf, zcol = "new_var")
+mapview::mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
 
-#we can spatially create an area of influence of our VAR based on the spatial locations of our waterholes
+#we can spatially create an area of influence of our parasite density based on the spatial locations of our waterholes
 #we use a function from spatstat r package and some object manipulation to get it into a usable format
+#the dirichlet function computes Dirichlet tessellation of a spatial point pattern (also known has the Voronoi and Thiessen tessellation)
+#as.ppp() converts our sf object into a spatial point pattern class object for the computation
+#we then need to convert back to an sf object for plotting 
 tess  <- dirichlet(as.ppp(waterholes_sf)) %>% st_as_sfc() %>% st_as_sf()
-st_crs(tess) <- st_crs(waterholes_sf) #reassign crs
+st_crs(tess) <- st_crs(waterholes_sf) #reassign our crs
 tess <- tess %>% st_join(waterholes_sf, fn=mean) %>% st_intersection(st_as_sf(Hwange)) #rejoin attributes and clip to Hwange NP
 #let's see what it looks like
 #what data type is the final output?
-mapview(tess, zcol = "new_var")
+mapview(tess, zcol = "para_den")
 
-#first for this next approach, we need a uniform grid
-#let's use our elevation raster but resample to 4km pixels
+#let's look at two more simple approaches to spatial interpolation
+#for these approachs, we need a uniform grid
+#let's use our elevation raster but resample to 4km pixels to make a uniform grid across Hwange NP
+#we can use the aggregate in terra to create a new spatraster with a lower resolution
 elev_crop_4km <- aggregate(elev_crop_UTM, 16)
-xy <- terra::xyFromCell(elev_crop_4km, 1:ncell(elev_crop_4km))
-grid <- st_as_sf(as.data.frame(xy), coords = c("x", "y"), crs = crs(elev_crop_UTM))
+elev_crop_4km
+xy <- terra::xyFromCell(elev_crop_4km, 1:ncell(elev_crop_4km)) #this will get the coordinates of the center of the raster cell
+grid <- st_as_sf(as.data.frame(xy), coords = c("x", "y"), crs = crs(elev_crop_UTM)) #now create an empty sf object that represents our grid
 
 #take a look at our grid
-mapview(grid)
+mapview(grid) #we now have a uniform grid across space that we can make predictions on
 
-#inverse distance weighted (idw) example
+#first approach: inverse distance weighted (idw)
 #unsampled locations are estimated as the weighted average of values from the rest of locations (inversely proportional to distance)
-idw <- gstat::idw(new_var ~ 1, waterholes_sf, newdata=grid, idp = 2.0)
+#we can use the idw function in the gstat function with a few input parameters
+#formula: defines the dependent variable and in this case, an intercept only model
+#we also tell it the data file (waterholes_sf) and the new data to make predictions on (grid)
+idw <- gstat::idw(para_den ~ 1, waterholes_sf, newdata=grid)
 
-# Convert to raster object then clip to Texas
-new_var_idw <- rasterize(vect(idw), elev_crop_4km, field = "var1.pred")
-new_var_idw <- mask(new_var_idw, Hwange)
-mapview(new_var_idw)
+#convert to raster object then mask to HWange NP
+#we can use the rasterize function in terra to convert our vector grid to a spatraster that matches the spatial properties of our resampled elevation raster
+#we also tell the function which field we want to use as our raster cell values (field = "var1.pred")
+para_den_idw <- rasterize(idw, elev_crop_4km, field = "var1.pred")
+para_den_idw <- mask(para_den_idw, Hwange)
+mapview(para_den_idw)
 
-#kriging
-v <- variogram(new_var ~ 1, data = waterholes_sf, cutoff = 100000, width = 5000) #sample data
+#second approach: kriging
+#unlike the previous approaches that are deterministic (based on distances), kriging is probabilistic and relies on statistical properties of observations
+#quantifies spatial autocorrelation and accounts for spatial configuration to make predictions
+#first we need to fit a variogram to our sample data
+#we set the cutoff of the spatial separation distance between points to include in our estimates and the distance intervals (widths) to group data points
+v <- variogram(para_den ~ 1, data = waterholes_sf, cutoff = 100000, width = 5000)
 plot(v)
 
-#we now need to fit a variogram model to our sample variogram
-vinitial <- vgm(psill = 1.2, model = "Exp", range = 10000, nugget = 0.01)
+#we now need to fit a variogram model to our sample variogram using the same input parameters we used to simulate the data
+vinitial <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
 plot(v, vinitial, cutoff = 1000, cex = 1.5)
+#now we want to fit our variogram model to our observed/sample variogram 
 fv <- fit.variogram(object = v, model = vinitial)
-k <- gstat(formula = new_var ~ 1, data = waterholes_sf, model = fv)
+#we use the same function again to create a gstat object with our data and fitted variogram model
+k <- gstat(formula = para_den ~ 1, data = waterholes_sf, model = fv)
 
-#once we have our model accounting for spatial autocorrelation we can predict to unsampled locations
+#once we have our model accounting for spatial autocorrelation we can predict to unsampled locations using the same grid as the idw example
 kpred <- predict(k, grid)
 
-#we will make two rasters the prediction and variance 
-new_var_krig <- rasterize(vect(kpred), elev_crop_4km, field = c("var1.pred", "var1.var"))
-new_var_krig <- mask(new_var_krig, Hwange)
+#we can once again use the rasterize function in terra to convert our vector grid to a spatraster that matches the spatial properties of our resampled elevation raster
+#we also tell the function that we want our prediction and variance field as our raster cell values
+para_den_krig <- rasterize(vect(kpred), elev_crop_4km, field = c("var1.pred", "var1.var"))
+para_den_krig <- mask(para_den_krig, Hwange)
+#take a quick look at the object that is returned
+para_den_krig
 
 #let's plot our results
-ggplot() + geom_spatraster(data = new_var_krig) +
+ggplot() + geom_spatraster(data = para_den_krig) +
   geom_sf(data = waterholes_sf) +
-  scale_fill_viridis(name = "new_var", na.value = "transparent") + theme_bw() +
-  facet_wrap(~lyr)
+  scale_fill_viridis(name = "Parasite density", na.value = "transparent") + theme_bw() +
+  facet_wrap(~lyr) #plot each layer separately
 
+#that's it, a quick look at spatial interpolation methods
+#this is an example of ordinary kriging, but many other approaches like universal kriging (include covariates) or Bayesian kriging (integrated nested Laplace approximation)
+
+############ Additional resources ################################################################################################################################################
 #please see links in slides for how to do "other" tasks that we don't have enough time to cover
 #(1) merging rasters together
 #(2) basic raster calculations (adding, subtracting)

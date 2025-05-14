@@ -67,7 +67,7 @@ crs(shp,describe=T)
 #much better!!
 
 #lets plot it
-plot(shp,col=as.factor(shp$site))#where 1 specifies the data column number to plot
+plot(shp,col=as.factor(shp$site))#make each site a different color
 
 ##Convert the spatVector object to data frame
 shp_df <-data.frame(shp)

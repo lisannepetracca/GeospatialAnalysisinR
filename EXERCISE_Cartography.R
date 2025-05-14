@@ -5,7 +5,7 @@
 #(4) plot those ten classes!
 
 #change this to your working directory
-setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
+setwd("YOUR WORKING DIRECTORY HERE")
 
 library(terra)
 library(tidyterra)

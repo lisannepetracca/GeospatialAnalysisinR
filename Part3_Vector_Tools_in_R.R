@@ -3,8 +3,8 @@
 #let's set our working directory first
 #this working directory will link to where you have stored the workshop data on your PC
 
-#setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 setwd("ADD DIRECTORY NAME HERE")
+#setwd("C:/Users/lisan/OneDrive - Texas A&M University - Kingsville/Geospatial_Analysis_in_R/Geospatial_Analysis_in_R")
 
 #and let's load all the libraries we need
 library(terra)
@@ -23,21 +23,21 @@ library(mapview)
 #read in the shapefile with vect()
 PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
-#let's look at it interactively
-mapview(PAs)
-
 #let's inspect the attribute table
 head(PAs)
 
 #let's fix wonky characters real quick
-PA_tibble <- PAs %>% as.tibble() %>% select(1,2) %>% mutate_if(is.character, 
-            function(col) iconv(col, from="ISO-8859-1")) 
+PA_tibble <- PAs %>% as_tibble() %>% select(1,2) %>% mutate_if(is.character, 
+                                                               function(col) iconv(col, from="ISO-8859-1")) 
 PAs[,1:2] <- PA_tibble
+
+#let's look at it interactively
+mapview(PAs)
 
 #let's see what the columns of the attribute table are
 names(PAs)
 
-#alternatively, to see the top six rows of data
+#alternatively, to see the top six rows of data (same as L. 27)
 head(PAs)
 
 #getting the coordinate system
@@ -132,14 +132,14 @@ ggplot() +
 
 #what if we wanted to display PAs as a function of PA size?
 ggplot() + 
-  #adds protected areas, with color by name
+  #adds protected areas, with fill by AREA
   geom_spatvector(data = BigPAs, aes(fill = area_km2), lwd = 0) +
   #add color palette
   scale_fill_viridis()+
   #adds border of Honduras
   geom_spatvector(data = honduras, fill=NA, lwd = 0.5) +
   #label protected areas in legend
-  #note use of bquote for superscript
+  #NOTE USE OF BQUOTE FOR SUPERSCRIPT
   labs(fill = bquote("Area (km"^2*")")) +
   #add title and subtitle
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
@@ -165,8 +165,11 @@ head(PAs_road_isect)
 #these two lines do the same thing
 honduras_roads_UTM <- project(honduras_roads, "EPSG:32616")
 honduras_roads_UTM <- project(honduras_roads, PAs)
+
+#getting the coordinate system
 crs(honduras_roads_UTM, describe=T)
 crs(PAs, describe=T)
+#yay, they match!
 
 #let's try that intersect again
 PAs_road_isect <- PAs[honduras_roads_UTM]
@@ -203,7 +206,7 @@ write.csv(PA_centroids_df, "PA_centroids.csv", fileEncoding = "ISO-8859-1", row.
 
 
 
-# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ---- ####
+# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ----
 
 
 #In this example, we will create buffers of 500 m around a series of camera traps in 

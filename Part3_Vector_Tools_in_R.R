@@ -27,13 +27,8 @@ PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 head(PAs)
 
 #let's fix wonky characters real quick
-<<<<<<< HEAD
-PA_tibble <- PAs %>% as_tibble() %>% select(1,2) %>% mutate_if(is.character, 
-                                                               function(col) iconv(col, from="ISO-8859-1")) 
-=======
 PA_tibble <- PAs %>% as_tibble() %>% tidyterra::select(1,2) %>% mutate_if(is.character, 
             function(col) iconv(col, from="ISO-8859-1")) 
->>>>>>> 62ae03c3d7ddde79691533d2be83ec0609a41966
 PAs[,1:2] <- PA_tibble
 
 #let's look at it interactively

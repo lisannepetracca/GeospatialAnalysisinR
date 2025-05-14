@@ -2,7 +2,7 @@
 
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
-setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+setwd("YOUR WORKING DIRECTORY HERE")
 
 #and let's load all the libraries we need
 library(terra)
@@ -47,7 +47,7 @@ roads_Hwange <- roads[HwangeNP,]
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", lwd=3)+
+  geom_spatvector(data=waterholes, color= "blue", size=3)+
   ggtitle("Roads and waterholes in Hwange NP", subtitle = "2023")+
   coord_sf() #ensures all layers use common coordinate system
 
@@ -63,7 +63,7 @@ unique(waterholes$TYPE)
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
+  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), size=3)+
   #"labs" gives a title to the legend
   labs(color = 'Waterhole type')+
   ggtitle("Waterhole types in Hwange NP", subtitle = "2023")+
@@ -77,7 +77,7 @@ waterhole_colors <- c("purple", "orange", "deepskyblue3")
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
+  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), size=3)+
   scale_color_manual(values=waterhole_colors)+
   ggtitle("Waterhole types in Hwange NP", subtitle = "2023")+
   labs(color = 'Waterhole type')+
@@ -87,7 +87,7 @@ ggplot() +
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
+  geom_spatvector(data=waterholes, aes(color=factor(TYPE)), size=3)+
   scale_color_manual(values=waterhole_colors)+
   labs(color = 'Waterhole type')+
   ggtitle("Waterhole types in Hwange NP")+
@@ -106,7 +106,7 @@ ggplot() +
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", lwd=3)+
+  geom_spatvector(data=waterholes, color= "blue", size=3)+
   ggtitle("Roads and waterholes in Hwange NP", subtitle = "2023")+
   coord_sf()
 
@@ -116,7 +116,7 @@ ggplot() +
 ggplot() +
   geom_spatvector(data = HwangeNP, color = "darkgreen", fill = "white", lwd=2) +
   geom_spatvector(data=roads_Hwange, aes(color = F_CODE_DES), linetype=1, lwd=0.25)+
-  geom_spatvector(data=waterholes, aes(fill=factor(TYPE)), size=4, shape=21, stroke=0)+
+  geom_spatvector(data=waterholes, aes(fill=factor(TYPE)), size=3, shape=21, stroke=0)+
                   #, show.legend="line")+
   scale_color_manual(values = "black", name = "")+
   guides(shape=25)+
@@ -165,7 +165,7 @@ ggplot() +
 
 
 
-#### ---- INCLUDING RASTER DATA ----####
+# ---- INCLUDING RASTER DATA ----
 
 #let's return to plotting elevation in Hwange NP
 #let's read in that cropped elevation file we already made
@@ -322,8 +322,8 @@ ggplot() +
   annotation_north_arrow(
     height=unit(1.5, "cm"),
     width=unit(1.25, "cm"),
-    pad_x = unit(8, "cm"),
-    pad_y = unit(6.5, "cm"))+
+    pad_x = unit(10, "cm"),
+    pad_y = unit(8.5, "cm"))+
   theme_bw()+
   theme(
     panel.grid.major =
@@ -333,7 +333,7 @@ ggplot() +
 
 
 
-#### ---- MAKING MULTIPLOTS ----####
+# ---- MAKING MULTIPLOTS ----
 
 #plotting multiple objects side by side
 #here we are using package cowplot, but also see the viewports() function in package grid
@@ -362,7 +362,7 @@ plot_grid(map, map2, labels = "AUTO", align="v") #labels = "auto" will use lower
 
 
 
-#### ---- MAKING INSET MAPS ----####
+# ---- MAKING INSET MAPS ----
 
 #let's add an inset to what we call "map" above
 #our inset map will be an outline of Zimbabwe only
@@ -370,7 +370,7 @@ plot_grid(map, map2, labels = "AUTO", align="v") #labels = "auto" will use lower
 Zimbabwe <- vect("Example_Zimbabwe/Zimbabwe.shp")
 
 #let's look at it
-mapview
+mapview(Zimbabwe)
 
 #we will call this map "inset"
 inset <- ggplot() +
@@ -387,7 +387,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.265, #you will have to play with these values a bit to get them right!
+            x = -0.33, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 #ok, we are nearly there! 
@@ -412,36 +412,42 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.265, #you will have to play with these values a bit to get them right!
+            x = -0.33, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 
 
-#### ---- INTERACTIVE MAPS ----####
+# ---- INTERACTIVE MAPS ----
 
 #last but not least, what if we wanted to add some interactivity to this map?
 #we will use the package tmap
 
-#rumor has it tmap supports terra objects now, but my version doesn't!
 #so we have to convert spatvector and spatraster objects to sf and raster classes, respectively, at the moment
 
-#the chosen palette is from tmap (yellow to green)
-tmap_leaflet(                                                  
-  tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster 
-  tm_raster(title = "Elevation (m)", alpha=0.5, palette = "YlGn") #declaring elev a raster; also setting some transparency
-  )
+(tmap_leaflet(                                                  
+  tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster (this will accommodate older versions of R)
+  tm_raster(col.legend = tm_legend("Elevation (m)"), #declaring elevation a raster
+            col_alpha=0.5,                           #adding some transparency
+            col.scale = tm_scale_continuous(         #adding continuous color palette
+                        values = "brewer.rd_yl_gn",  #choice of palette
+                        midpoint = NA))              #not supplying midpoint
+  ))
 
 
-  #let's add the whole map with waterholes and roads!
-  #and let's return to default palette
-tmap_leaflet(                                                      
+#let's add the whole map with waterholes and roads!
+#and let's return to default palette
+(tmap_leaflet(                                                      
   tm_shape(as(elev, "Raster")) + #convert elev from spatraster to raster
-    tm_raster(title = "Elevation (m)", alpha=0.5) +
-  tm_shape(st_as_sf(roads_Hwange)) + #convert roads from spatvector to sf
-    tm_lines(col="black", lwd=1)+ #declare the roads as lines
+    tm_raster(col.legend = tm_legend("Elevation (m)"), #declaring elevation a raster
+              col_alpha=0.5,                           #adding some transparency
+              col.scale = tm_scale_continuous(         #adding continuous color palette
+                values = "brewer.rd_yl_gn",  #choice of palette
+                midpoint = NA)) +            #not supplying midpoint
+  tm_shape(st_as_sf(roads_Hwange)) + #convert roads from spatvector to sf; #needed to accommodate older versions of R
+    tm_lines(col="darkgray", lwd=1)+ #declare the roads as lines
   tm_shape(st_as_sf(HwangeNP)) + #convert HwangeNP from spatvector to sf
-    tm_borders(col = "black", lwd=2)+ #declare Hwange as borders
+    tm_borders(col = "black", lwd=3)+ #declare Hwange as borders
   tm_shape(st_as_sf(waterholes)) + #convert waterholes from spatvector to sf
-    tm_dots(col="darkgray") #declare waterholes as dots
-  ) 
+    tm_dots(fill="blue") #declare waterholes as dots
+  ))
 #you can export this as a webpage! (.html)

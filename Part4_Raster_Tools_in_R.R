@@ -22,14 +22,16 @@ Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
 #and do a simple plot
 plot(Hwange)
 
+#To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
+mapview(Hwange)
+
 #let's create 1000 random points within the PA for to represent 'lion sightings' using spatSample()
 #size = number of points
 #method can be regular or random or stratified if using a spatRaster
-#replace=T; sampling with replacement (if)
+#replace=T is the option for sampling with replacement
 Hwange_pts <- spatSample(Hwange, size=1000, method="random")
 
-#To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
-#Multiple spatial datasets can be added to one plot using a '+' sign between mapview call or using lists
+#You can use mapview to show multiple spatial datasets! This is via using a '+' sign between mapview calls or using lists
 #We can also adjust our visualization by using a few different commands. Color = fill of color of object, alpha.regions = transparency, and lwd = thickness of the polygon outline
 mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) + mapview(Hwange_pts)
 
@@ -128,8 +130,9 @@ plot(Hwange_WGS,add=T, lwd = 5)
 elev_mask <- mask(elev, Hwange_WGS)
 plot(elev_mask)
 plot(Hwange_WGS,add=T, lwd = 5)
+#the only weird thing is that the extent stays the same as the original elev layer!
 
-#we can also apply the mask after we crop the image
+#let's fix that by applying the mask after we crop the image
 elev_crop_mask <- mask(elev_crop, Hwange_WGS)
 plot(elev_crop_mask)
 plot(Hwange_WGS,add=T, lwd = 5)
@@ -190,7 +193,7 @@ plot(percveg)
 plot(Hwange, border="black",col=NA, lwd=2,add=T)
 
 #let's see the spread in values for a subset of cells
-hist(percveg)
+hist(percveg) #IGNORE WARNING
 
 #let's crop it now, to get rid of the raster extent we don't need
 veg_crop <- crop(percveg, elev_crop_UTM) 
@@ -240,15 +243,16 @@ elev_reclass <- classify(elev_crop_match, reclass_mat)
 plot(elev_reclass)
 plot(Hwange, border="black",col=NA,lwd=5,add=T)
 
+
+
+# ---- BUILDING DISTANCE LAYERS ----
+
 #let's move on to getting distances from roads and waterholes
 #first, let's crop roads to Hwange extent
 roads_hwange <- crop(roads_UTM, Hwange)
 
 #let's plot the roads
 plot(roads_hwange)
-
-
-# ---- BUILDING DISTANCE LAYERS ----
 
 #for distance to linear features (roads), let's use distance()
 #first, we create an empty raster of a certain resolution & extent such that we can *eventually* store our distances there
@@ -337,34 +341,43 @@ plot(elev)
 
 
 
-######################## BONUS (if time allows): short introduction to point pattern process and interpolation ###############################################
+######################## BONUS (if time allows): Short introduction to point pattern process and interpolation ###############################################
 
 #we are going to do a quick look at spatial interpolation methods
-#let's go back to our watering holes and say we sampled the water and calculated parasite density and are now interested in predicting parasite density in unsampled locations
+#let's go back to our waterholes and say we sampled the water and calculated parasite density and 
+#are now interested in predicting parasite density in unsampled locations
 waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object
 
 #first let's simulate some data with a spatially autocorrelated structure
 #to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
 #we need to specify a model function, and in this case, we are using an Exponential function
-#you also need to describe the shape of the function using the sill, range, and nugget parameters
+#using an exponential function means that the correlation between points diminishes gradually 
+#as the distance between them increases, approaching a "sill" or plateau 
+
+#you need to describe the shape of the function using the sill, range, and nugget parameters
 #sill: maximum variability between two points
-#range: the lag distance where the variogram levels off. two points are not spatially correlated if separated by a distance greater than the range.
+#range: the lag distance where the variogram levels off 
+#at the range, two points are not spatially correlated if separated by that distance or greater
 #nugget: this represents small scale variability or y-intercept
 vgm_model <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
+
 #next we need to create a gstat object and tell it a few different inputs to make our predictions
-#formula: this defines our dependent variable as a an intercept only model
+#formula: this defines our dependent variable as a an intercept only model (as in, no covariate predictors)
 #locations: spatial data locations
-#since we are not conditioning our model on observed data, we need to tell the function that it is an unconditional simulation using dummy = TRUE and it is intercept only with beta = 0
+#since we are not conditioning our model on observed data, we need to tell the function that it is 
+#an unconditional simulation using dummy = TRUE and it is intercept only with beta = 1
 #model: our generated variogram model that describes the spatial autocorrelation between our points
 #nmax: set the number of nearest observations that should be used for our simulation
 sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 1, model = vgm_model, nmax = 20)
+
 #we can then predict our new variable to our locations of watering holes
 sim_result <- predict(sim_gstat, newdata = waterholes_sf, nsim = 1)
+
 #we assign our simulated results to a new data column in our waterholes sf object
 waterholes_sf$para_den <- sim_result$sim1 #create new waterhole variable that reflects the parasite density at watering holes (para_den)
 
 #let's look at the spatial pattern
-mapview::mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
+mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
 
 #we can spatially create an area of influence of our parasite density based on the spatial locations of our waterholes
 #we use a function from spatstat r package and some object manipulation to get it into a usable format
@@ -375,6 +388,7 @@ tess  <- dirichlet(as.ppp(waterholes_sf)) %>% st_as_sfc() %>% st_as_sf()
 st_crs(tess) <- st_crs(waterholes_sf) #reassign our crs
 tess <- tess %>% st_join(waterholes_sf, fn=mean) %>% st_intersection(st_as_sf(Hwange)) #rejoin attributes and clip to Hwange NP
 #let's see what it looks like
+#IGNORE WARNING
 #what data type is the final output?
 mapview(tess, zcol = "para_den")
 
@@ -414,7 +428,7 @@ plot(v)
 
 #we now need to fit a variogram model to our sample variogram using the same input parameters we used to simulate the data
 vinitial <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
-plot(v, vinitial, cutoff = 1000, cex = 1.5)
+plot(v, vinitial, cutoff = 1000, cex = 1.5, lwd=2)
 #now we want to fit our variogram model to our observed/sample variogram 
 fv <- fit.variogram(object = v, model = vinitial)
 #we use the same function again to create a gstat object with our data and fitted variogram model

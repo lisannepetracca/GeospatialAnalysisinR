@@ -50,6 +50,10 @@ distwater_align <- resample(distwater, elev, method="bilinear")
 #and stack 'em!
 stack <- c(elev, distwater_align)
 
+#rename the stack layers
+names(stack) <- c("elevation", "distance to waterhole")
+   
+#plot them               
 plot(stack)
 
 #create a buffer around each point to extract

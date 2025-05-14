@@ -30,7 +30,7 @@ mapview(PAs)
 head(PAs)
 
 #let's fix wonky characters real quick
-PA_tibble <- PAs %>% as.tibble() %>% select(1,2) %>% mutate_if(is.character, 
+PA_tibble <- PAs %>% as_tibble() %>% tidyterra::select(1,2) %>% mutate_if(is.character, 
             function(col) iconv(col, from="ISO-8859-1")) 
 PAs[,1:2] <- PA_tibble
 

@@ -7,7 +7,7 @@
 #(5) extract mean values from raster stack for 1000-m  buffers around the 100 random points
 #(6) save as .csv
 
-setwd("D:/My Drive/Synced Desktop/SDSU/Workshops Taught/GeospatialAnalysisinR_4hrs_2023/")
+setwd("YOUR WORKING DIRECTORY HERE")
 
 library(terra)
 library(ggplot2)

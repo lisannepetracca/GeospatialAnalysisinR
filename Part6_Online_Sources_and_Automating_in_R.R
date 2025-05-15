@@ -5,7 +5,6 @@ setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R/")
 #get the working directory and save as an object wd to access later
 wd<-getwd()
-
 library(terra)
 library(tidyterra)
 library(ggplot2)
@@ -26,7 +25,6 @@ library(rnaturalearth)
 library(hexbin)
 library(rnaturalearthdata)
 library(keyring)
-library(climateR)
 
 # ---- USING LOOPS ----
 
@@ -167,21 +165,20 @@ geo_dat_coords<-cbind(data.frame(sub),coords)
 
 #Excellent, but let's say you want to give your techs an idea of the landscape in each unit
 #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
-nlcd_wma <- getNLCD(sub, year = 2016, type = "land cover")
-#THE ABOVE LINE MAY TAKE A WHILE
+nlcd_wma <- get_nlcd(sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
 
-#Alternatively, read them in from file
-#nlcd <- rast("Example_TX/WildlifeManagementAreas/Annual_NLCD_LndCov_2016_CU_C1V0.tif")
-#nlcd <- project(nlcd, "EPSG:4269")
-#nlcd_wma <- crop(nlcd, vect((sub))
+
+#Alternatively, read them in from file if FedData package does not work
+#nlcd <- rast("Texas_Raster/NLCD_Texas.tiff")
+#nlcd <- project(nlcd, "EPSG:4269") #This may take several minutes
+#nlcd_wma <- crop(nlcd, sub)
+
 
 #Now project it into the same crs as our the wma
 nlcd_wma <- project(nlcd_wma, "EPSG:4269")
 
 #And map it!
-plot(nlcd_wma)
 
-#MMS - THIS WILL NOT LOOK GOOD WITH NEW DOWNLOAD AND WILL NEED TO ADJUST, OTHERWISE JUST USE PLOT IN LINE 182
 ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                color = "black", fill = NA, alpha=0.5, lwd=1) + 
@@ -218,7 +215,10 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   
   #Excellent, but let's say you want to give your techs an idea of the landcover
   #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
-  nlcd_wma <- getNLCD(sub, year = 2016, type = "land cover")
+  nlcd_wma <- get_nlcd(sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
+  
+  #Alternatively, if using NLCD read in from file
+  #nlcd_wma <- crop(nlcd, sub)
   
   #Now project it into the same crs as our the wma
   nlcd_wma <- project(nlcd_wma, "EPSG:4269")
@@ -647,11 +647,12 @@ for (i in 1:length(l)){
 #we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
 #https://r-spatialecology.github.io/landscapemetrics/
 
-#let's get nlcd land cover using the climateR package again
-nlcd <- getNLCD(fisher , year = 2016, type = "land cover")
+#let's get nlcd land cover using the FedData package again
+nlcd <- get_nlcd(fisher, year = 2016, dataset = "landcover", label = "Fisher Landcover", force.redo = T)
+
 
 #Alternatively let's use our downloaded tif file
-nlcd <- rast("Example_TX/WildlifeManagementAreas/Annual_NLCD_LndCov_2016_CU_C1V0.tif")
+#nlcd <- rast("Example_Fisher/Fisher_Raster/NLCD_Fish.tiff")
   
 #we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
 crs(nlcd, describe=T)

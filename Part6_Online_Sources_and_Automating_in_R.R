@@ -190,6 +190,7 @@ pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
 ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                color = "black", fill = NA, alpha=0.5, lwd=1) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
 
 dev.off()
@@ -221,6 +222,7 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   site.map <- ggplot() + geom_spatraster(data = nlcd_wma) + 
     geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                  color = "black", fill = NA, alpha=0.5, lwd=1) + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
     coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
   
   #and now make and save a new map, make sure to save based on i to not overwrite

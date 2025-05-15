@@ -206,7 +206,6 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   x.max<-xmax(sub)
   y.max<-ymax(sub)
   
-  
   #We need to convert to a data frame w/ coordinates
   coords<-data.frame(crds(sub))
   geo_dat_coords<-cbind(data.frame(sub),coords)
@@ -218,17 +217,11 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   #Alternatively, if using NLCD read in from file
   #nlcd_wma <- crop(nlcd, sub)
   
-  #Now project it into the same crs as our the wma
-  nlcd_wma <- project(nlcd_wma, "EPSG:4269")
-  
   #And map it!
-  
   site.map <- ggplot() + geom_spatraster(data = nlcd_wma) + 
     geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                  color = "black", fill = NA, alpha=0.5, lwd=1) + 
     coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
-  
-  
   
   #and now make and save a new map, make sure to save based on i to not overwrite
   pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
@@ -647,7 +640,6 @@ for (i in 1:length(l)){
 
 #let's get nlcd land cover using the FedData package again
 nlcd <- get_nlcd(fisher, year = 2016, dataset = "landcover", label = "Fisher Landcover", force.redo = T)
-
 
 #Alternatively let's use our downloaded tif file
 #nlcd <- rast("Example_Fisher/Fisher_Raster/NLCD_Fish.tiff")

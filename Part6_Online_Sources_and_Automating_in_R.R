@@ -415,7 +415,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" ,password ="")
+movebank_store_credentials(username="" ,password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP
 s<-	movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -642,7 +642,7 @@ for (i in 1:length(l)){
 nlcd <- get_nlcd(fisher, year = 2016, dataset = "landcover", label = "Fisher Landcover", force.redo = T)
 
 #Alternatively let's use our downloaded tif file
-#nlcd <- rast("Example_Fisher/Fisher_Raster/NLCD_Fish.tiff")
+#nlcd <- rast("Example_Fisher/NLCD_Fish.tiff")
   
 #we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
 crs(nlcd, describe=T)

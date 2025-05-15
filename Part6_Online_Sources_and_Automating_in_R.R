@@ -2,7 +2,7 @@
 
 #set your working directory
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R/")
+
 #get the working directory and save as an object wd to access later
 wd<-getwd()
 library(terra)
@@ -152,6 +152,9 @@ length(TX_WMA$LoName)
 # or was it for permitting? either way
 #wow that's a lot of study site maps to make!
 
+#first let's project the WMAs to the same projection as the NLCD data
+TX_WMA <- project(TX_WMA, "EPSG:5070")
+
 #lets get the extent for the first WMA (Cedar Creek WMA - Big Island Uni)
 sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
 x.min<-xmin(sub)
@@ -166,16 +169,11 @@ geo_dat_coords<-cbind(data.frame(sub),coords)
 #Excellent, but let's say you want to give your techs an idea of the landscape in each unit
 #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
 nlcd_wma <- get_nlcd(sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
+plot(nlcd_wma)
 
-
-#Alternatively, read them in from file if FedData package does not work
-#nlcd <- rast("Texas_Raster/NLCD_Texas.tiff")
-#nlcd <- project(nlcd, "EPSG:4269") #This may take several minutes
-#nlcd_wma <- crop(nlcd, sub)
-
-
-#Now project it into the same crs as our the wma
-nlcd_wma <- project(nlcd_wma, "EPSG:4269")
+# #IF FEDDATA PACKAGE DOESN'T WORK, USE THE BELOW LINES
+# nlcd <- rast("Example_TX/NLCD_Texas.tiff")
+# nlcd_wma <- crop(nlcd, sub)
 
 #And map it!
 

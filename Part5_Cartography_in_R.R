@@ -95,7 +95,7 @@ ggplot() +
         legend.position="bottom", #changes legend position
         legend.title=element_text(size=16), #changes size of legend title
         legend.text = element_text(size=16), #changes size of element text in legend
-        legend.box.background = element_rect(size = 1)) + #adds a legend box of width 1
+        legend.box.background = element_rect(linewidth = 1)) + #adds a legend box of width 1
   coord_sf()
 
 

@@ -2,10 +2,9 @@
 
 #set your working directory
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R/")
+
 #get the working directory and save as an object wd to access later
 wd<-getwd()
-
 library(terra)
 library(tidyterra)
 library(ggplot2)
@@ -26,7 +25,6 @@ library(rnaturalearth)
 library(hexbin)
 library(rnaturalearthdata)
 library(keyring)
-library(climateR)
 
 # ---- USING LOOPS ----
 
@@ -154,6 +152,9 @@ length(TX_WMA$LoName)
 # or was it for permitting? either way
 #wow that's a lot of study site maps to make!
 
+#first let's project the WMAs to the same projection as the NLCD data
+TX_WMA <- project(TX_WMA, "EPSG:5070")
+
 #lets get the extent for the first WMA (Cedar Creek WMA - Big Island Uni)
 sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName[[1]]),]
 x.min<-xmin(sub)
@@ -167,21 +168,15 @@ geo_dat_coords<-cbind(data.frame(sub),coords)
 
 #Excellent, but let's say you want to give your techs an idea of the landscape in each unit
 #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
-nlcd_wma <- getNLCD(sub, year = 2016, type = "land cover")
-#THE ABOVE LINE MAY TAKE A WHILE
-
-#Alternatively, read them in from file
-#nlcd <- rast("Example_TX/WildlifeManagementAreas/Annual_NLCD_LndCov_2016_CU_C1V0.tif")
-#nlcd <- project(nlcd, "EPSG:4269")
-#nlcd_wma <- crop(nlcd, vect((sub))
-
-#Now project it into the same crs as our the wma
-nlcd_wma <- project(nlcd_wma, "EPSG:4269")
-
-#And map it!
+nlcd_wma <- get_nlcd(sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
 plot(nlcd_wma)
 
-#MMS - THIS WILL NOT LOOK GOOD WITH NEW DOWNLOAD AND WILL NEED TO ADJUST, OTHERWISE JUST USE PLOT IN LINE 182
+# #IF FEDDATA PACKAGE DOESN'T WORK, USE THE BELOW LINES
+# nlcd <- rast("Example_TX/NLCD_Texas.tiff")
+# nlcd_wma <- crop(nlcd, sub)
+
+#And map it!
+
 ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                color = "black", fill = NA, alpha=0.5, lwd=1) + 
@@ -195,6 +190,7 @@ pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
 ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                color = "black", fill = NA, alpha=0.5, lwd=1) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
 
 dev.off()
@@ -211,26 +207,23 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   x.max<-xmax(sub)
   y.max<-ymax(sub)
   
-  
   #We need to convert to a data frame w/ coordinates
   coords<-data.frame(crds(sub))
   geo_dat_coords<-cbind(data.frame(sub),coords)
   
   #Excellent, but let's say you want to give your techs an idea of the landcover
   #Here, we will use the FedData package (which we will revisit later) to show landcover types acoss the WMA
-  nlcd_wma <- getNLCD(sub, year = 2016, type = "land cover")
+  nlcd_wma <- get_nlcd(sub, year = 2016, dataset = "landcover", label = "Texas Landcover", force.redo = T)
   
-  #Now project it into the same crs as our the wma
-  nlcd_wma <- project(nlcd_wma, "EPSG:4269")
+  #Alternatively, if using NLCD read in from file
+  #nlcd_wma <- crop(nlcd, sub)
   
   #And map it!
-  
   site.map <- ggplot() + geom_spatraster(data = nlcd_wma) + 
     geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                  color = "black", fill = NA, alpha=0.5, lwd=1) + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
     coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
-  
-  
   
   #and now make and save a new map, make sure to save based on i to not overwrite
   pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
@@ -424,7 +417,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" ,password ="")
+movebank_store_credentials(username="" ,password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP
 s<-	movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -647,11 +640,11 @@ for (i in 1:length(l)){
 #we could use the r package landscapemetrics for calculating landscape metrics of categorical landscape patterns 
 #https://r-spatialecology.github.io/landscapemetrics/
 
-#let's get nlcd land cover using the climateR package again
-nlcd <- getNLCD(fisher , year = 2016, type = "land cover")
+#let's get nlcd land cover using the FedData package again
+nlcd <- get_nlcd(fisher, year = 2016, dataset = "landcover", label = "Fisher Landcover", force.redo = T)
 
 #Alternatively let's use our downloaded tif file
-nlcd <- rast("Example_TX/WildlifeManagementAreas/Annual_NLCD_LndCov_2016_CU_C1V0.tif")
+#nlcd <- rast("Example_Fisher/NLCD_Fish.tiff")
   
 #we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
 crs(nlcd, describe=T)

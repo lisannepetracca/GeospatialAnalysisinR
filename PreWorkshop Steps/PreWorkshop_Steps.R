@@ -46,6 +46,6 @@ library(raster)
 
 #and then read in two types of geospatial data
 elev <- rast("PreWorkShop Steps/aster_image_20160624.tif")
-honduras_boundary <- vect("PreWorkShop Steps/Honduras_Border.shp")
+honduras_boundary <- vect("PreWorkShop_Steps/Honduras_Border.shp")
 
 #if no errors, then WHOOO HOOO! WE'RE DONE!

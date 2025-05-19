@@ -75,10 +75,16 @@ if(i=="b"){ #run individual lines of code to check for errors
 #we are going to do this using loops to practice
 
 #need to define names for each file to be downloaded to
-tx<-("/TX_WMAs") #Texas WMA boundaries
-rds<-("/roads")#texas roads
-state<-("/state")
-root<- c(tx,rds,state) #going to bind folder pathways into vector to reference later
+# Define directory names (relative or absolute paths)
+tx <- "TX_WMAs"
+rds <- "roads" #texas roads
+state <- "state"
+root <- c(tx, rds, state) #going to bind folder pathways into vector to reference later
+
+# Create directories if they don't exist
+for (dir in root) {
+  if (!dir.exists(dir)) dir.create(dir)
+}
 
 #get URLS from internet for zip files
 files<-c(
@@ -88,25 +94,26 @@ files<-c(
 
 #write a loop to batch download URLS
 #this might take a few minutes to run
-for (i in 1:length(files)){ #iterate through each instance of files (aka run through 1:3 here)
+# Download each file into the corresponding folder with a specific filename
+for (i in 1:length(files)) { #iterate through each instance of files (aka run through 1:3 here)
   #note I prefer length(files) as opposed to 1:3, because I can add or delete files to root and files and this still works
-  download.file(files[i],paste(wd,root[i],sep="")) #download file from that instance (i) using download.file() function
-  #of files into the working directory with the corresponding root
+  zip_path <- file.path(wd, root[i], paste0("data", i, ".zip"))  # Define zip file path
+  download.file(files[i], destfile = zip_path, mode = "wb") #download file from that instance (i) using download.file() function of files into the working directory with the corresponding root
+  
+  # Unzip the file into its folder
+  unzip(zip_path, exdir = file.path(wd, root[i])) #unzip the folder corresponding to wd + particular root
 }
+
 
 #look in detail at loop
 i=1 #set iteration 
 files[i] #check files at that iteration
 paste(wd,root[i],sep="") #see where we are storing it
 
-#unzip each file
-for (i in 1:length(files)){ #for each instance in files (1:3 in this case)
-  unzip(paste(wd, root[i], sep=""))} #unzip the folder corresponding to wd + particular root 
-
 #read in TX WMAs, roads shapefiles, & elevation raster
-TX_WMA<-vect("WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
-roads<-vect("tl_2019_48_prisecroads.shp")
-state_bound<-vect("Tx_Bndry_General_TIGER5m.shp")
+TX_WMA<-vect("TX_WMAs/WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
+roads<-vect("roads/tl_2019_48_prisecroads.shp")
+state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
 
 #Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
@@ -122,7 +129,7 @@ state_bound<-vect("Tx_Bndry_General_TIGER5m.shp")
 
 prism_set_dl_dir(wd) #Tell PRISM where your working directory is
 # Download the climate normals for mean temperature between January and February at 800 m resolution
-get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE)
+get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) #ignore warning
 #the term "climate normals" refers to the most recent 30 year average
 #this can take a minute or two
 

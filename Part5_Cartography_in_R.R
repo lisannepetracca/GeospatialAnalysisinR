@@ -35,13 +35,13 @@ crs(roads, describe=T)
 crs(waterholes, describe=T)
 
 #roads do not match. let's project roads to WGS 1984 UTM Zone 35S to match the others
-roads <- project(roads, "EPSG:32735")
+roads_UTM <- project(roads, "EPSG:32735")
 
 #let's make sure it worked
-crs(roads, describe=T)
+crs(roads_UTM, describe=T)
 
 #and now let's select the roads that intersect Hwange NP
-roads_Hwange <- roads[HwangeNP,]
+roads_Hwange <- roads_UTM[HwangeNP,]
 
 #and now let's plot what we have
 ggplot() +

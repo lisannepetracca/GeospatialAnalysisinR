@@ -3,6 +3,7 @@
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 
 #let's load all the libraries we need
 library(ggplot2)
@@ -339,44 +340,21 @@ plot(stack_import)
 elev <- subset(stack_import,subset=2)
 plot(elev)
 
-
-
+##############################################################################################################################################################
 ######################## BONUS (if time allows): Short introduction to point pattern process and interpolation ###############################################
+##############################################################################################################################################################
 
 #we are going to do a quick look at spatial interpolation methods
 #let's go back to our waterholes and say we sampled the water and calculated parasite density and 
-#are now interested in predicting parasite density in unsampled locations
-waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object
+#are now interested in predicting what parasite density might look like in unsampled locations
 
-#first let's simulate some data with a spatially autocorrelated structure
-#to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
-#we need to specify a model function, and in this case, we are using an Exponential function
-#using an exponential function means that the correlation between points diminishes gradually 
-#as the distance between them increases, approaching a "sill" or plateau 
+#we first need some data
+waterholes_df <- read.csv("waterholes_df.csv") #read in out data as a csv file
+#next we need to convert our data frame to a spatial object
+#let's make this an sf object using st_as_sf() where we input the object, coordinates, and the crs of our data
+waterholes_sf <- st_as_sf(waterholes_df, coords = c("X","Y"), crs = 32735) 
 
-#you need to describe the shape of the function using the sill, range, and nugget parameters
-#sill: maximum variability between two points
-#range: the lag distance where the variogram levels off 
-#at the range, two points are not spatially correlated if separated by that distance or greater
-#nugget: this represents small scale variability or y-intercept
-vgm_model <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
-
-#next we need to create a gstat object and tell it a few different inputs to make our predictions
-#formula: this defines our dependent variable as a an intercept only model (as in, no covariate predictors)
-#locations: spatial data locations
-#since we are not conditioning our model on observed data, we need to tell the function that it is 
-#an unconditional simulation using dummy = TRUE and it is intercept only with beta = 1
-#model: our generated variogram model that describes the spatial autocorrelation between our points
-#nmax: set the number of nearest observations that should be used for our simulation
-sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 1, model = vgm_model, nmax = 20)
-
-#we can then predict our new variable to our locations of watering holes
-sim_result <- predict(sim_gstat, newdata = waterholes_sf, nsim = 1)
-
-#we assign our simulated results to a new data column in our waterholes sf object
-waterholes_sf$para_den <- sim_result$sim1 #create new waterhole variable that reflects the parasite density at watering holes (para_den)
-
-#let's look at the spatial pattern
+#let's look at the spatial pattern of parasite density across our waterholes
 mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
 
 #we can spatially create an area of influence of our parasite density based on the spatial locations of our waterholes
@@ -426,7 +404,17 @@ mapview(para_den_idw)
 v <- variogram(para_den ~ 1, data = waterholes_sf, cutoff = 100000, width = 5000)
 plot(v)
 
-#we now need to fit a variogram model to our sample variogram using the same input parameters we used to simulate the data
+#we now need to fit a variogram model to our sample variogram
+#to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
+#we need to specify a model function, and in this case, we are using an Exponential function
+#using an exponential function means that the correlation between points diminishes gradually 
+#as the distance between them increases, approaching a "sill" or plateau 
+
+#you need to describe the shape of the function using the sill, range, and nugget parameters
+#sill: maximum variability between two points
+#range: the lag distance where the variogram levels off 
+#at the range, two points are not spatially correlated if separated by that distance or greater
+#nugget: this represents small scale variability or y-intercept
 vinitial <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
 plot(v, vinitial, cutoff = 1000, cex = 1.5, lwd=2)
 #now we want to fit our variogram model to our observed/sample variogram 

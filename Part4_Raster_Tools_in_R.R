@@ -3,7 +3,6 @@
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 
 #let's load all the libraries we need
 library(ggplot2)
@@ -15,7 +14,7 @@ library(spatstat)
 library(gstat)
 library(sf)
 
-# ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
+#### ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ---- ####
 
 #first, let's read in our shapefile of Hwange NP with vect()
 Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
@@ -39,7 +38,7 @@ mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) + mapview(Hwan
 #what does this look like using ggplot?
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", lwd=1.5) +
-  geom_spatvector(data=Hwange_pts, color = "black", size=1)+
+  geom_spatvector(data = Hwange_pts, color = "black", size=1)+
   ggtitle("1000 Random Points in Hwange NP")
 #depending on your version of R you may need to change the 'size' argument to 'lwd' for lines
 
@@ -49,8 +48,8 @@ waterholes <- vect("Example_Zimbabwe/waterholes.shp")
 
 #let's plot those vectors within Hwange
 ggplot() +
-  geom_spatvector(data=roads, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", size=1)+
+  geom_spatvector(data = roads, color = "black", lwd=1)+
+  geom_spatvector(data = waterholes, color= "blue", size=1)+
   geom_spatvector(data = Hwange, color = "darkgreen", fill=NA, lwd=1.5) +
   ggtitle("Roads and Waterholes in Hwange NP")
 
@@ -62,8 +61,8 @@ park_extent <- ext(Hwange)
 #here, our coordinate system is WGS 1984 UTM Zone 35S (EPSG 32735)
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", fill = "white", lwd=1.5) +
-  geom_spatvector(data=roads, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", size=2)+
+  geom_spatvector(data = roads, color = "black", lwd=1)+
+  geom_spatvector(data = waterholes, color= "blue", size=2)+
   ggtitle("Roads and Waterholes in Hwange NP")+
   coord_sf(datum=crs("EPSG:32735"), xlim=c(park_extent[1], park_extent[2]), ylim=c(park_extent[3], park_extent[4]))
 #that's better!
@@ -75,7 +74,7 @@ crs(roads, describe=T)
 roads_UTM <- project(roads, "EPSG:32735")
 
 
-# ---- BASIC RASTER STATISTICS ----
+#### ---- BASIC RASTER STATISTICS ---- ####
 
 #OK now time for a raster! Let's read in the elevation (it's an aster image)
 elev <- rast("Example_Zimbabwe/aster_image_20160624.tif") 
@@ -110,10 +109,10 @@ Hwange_WGS <- project(Hwange, "EPSG:4326")
 
 #let's see what it looks like now!
 #add=T adds the Hwange boundary to the existing plot 
-plot(Hwange_WGS,add=T)
+plot(Hwange_WGS, add=T)
 
 
-# ---- USING CROP AND MASK TOOLS ----
+#### ---- USING CROP AND MASK TOOLS ---- ####
 
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's crop it to make raster processing go a bit faster
@@ -121,7 +120,7 @@ elev_crop <- crop(elev, Hwange_WGS)
 
 #let's see what it looks like now!
 plot(elev_crop)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd = 5)
 
 #Quick comparison between Cropping and Masking 
 #Cropping: Removing rows and/or columns to reduce the raster extent
@@ -130,13 +129,13 @@ plot(Hwange_WGS,add=T, lwd = 5)
 #lets try a mask on the elev layer using Hwange_WGS
 elev_mask <- mask(elev, Hwange_WGS)
 plot(elev_mask)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd = 5)
 #the only weird thing is that the extent stays the same as the original elev layer!
 
 #let's fix that by applying the mask after we crop the image
 elev_crop_mask <- mask(elev_crop, Hwange_WGS)
 plot(elev_crop_mask)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd = 5)
 #masking can be helpful for creating maps, accounting for boundaries, and restricting any analysis to a region of interest 
 
 #Ok back to working with our cropped elevation layer
@@ -152,7 +151,7 @@ elev_crop_UTM <- project(elev_crop, res=250, "EPSG:32735")
 
 #let's make sure it looks ok with our Hwange shapefile in UTM coordinates
 plot(elev_crop_UTM)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="black", col=NA, lwd=5, add=T)
 #ok, we are good!
 
 #we are going to write this raster to file so we can use it later
@@ -191,7 +190,7 @@ percveg[percveg > 100 | percveg<0] <- NA
 plot(percveg)
 
 #let's see what it looks like with Hwange NP
-plot(Hwange, border="black",col=NA, lwd=2,add=T)
+plot(Hwange, border="black", col=NA, lwd=2, add=T)
 
 #let's see the spread in values for a subset of cells
 hist(percveg) #IGNORE WARNING
@@ -201,10 +200,10 @@ veg_crop <- crop(percveg, elev_crop_UTM)
 
 #let's see what it looks like now!
 plot(veg_crop)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="black", col=NA, lwd=5, add=T)
 
 
-# ---- MAKING A RASTER STACK ----
+#### ---- MAKING A RASTER STACK ---- ####
 
 #what happens when we try to make a raster stack of vegetation and elevation?
 stack <- c(veg_crop, elev_crop_UTM)
@@ -223,8 +222,7 @@ elev_crop_match <- resample(elev_crop_UTM, veg_crop, method="bilinear")
 stack <- c(veg_crop, elev_crop_match)
 #yay, it works now!
 
-
-# ---- USING RECLASSIFY ----
+#### ---- USING RECLASSIFY ---- ####
 
 #a quick aside: let's say that we'd like to have four categories for elevation rather than continuous values
 #for example, 800-900 meters = 8, 900-1000 meters = 9, etc.
@@ -242,11 +240,11 @@ elev_reclass <- classify(elev_crop_match, reclass_mat)
 
 #let's see what it looks like now!
 plot(elev_reclass)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="black", col=NA, lwd=5, add=T)
 
 
 
-# ---- BUILDING DISTANCE LAYERS ----
+#### ---- BUILDING DISTANCE LAYERS ---- ####
 
 #let's move on to getting distances from roads and waterholes
 #first, let's crop roads to Hwange extent
@@ -266,7 +264,7 @@ distroad_raster <- distance(raster_extent, roads_hwange)
 
 #we're done! let's plot the output
 plot(distroad_raster)
-plot(roads_hwange, col="black",lwd=2,add=T)
+plot(roads_hwange, col="black", lwd=2, add=T)
 
 #now let's calculate distance from points using distance()
 #creating another empty raster
@@ -277,14 +275,13 @@ distwater_raster <- distance(raster_extent, waterholes)
 
 #plotting the output
 plot(distwater_raster)
-plot(waterholes, col="black",lwd=2,add=T)
+plot(waterholes, col="black", lwd=2, add=T)
 
 #let's write this to raster to we can use it later
 writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
 
 
-
-# ---- NEIGHBORHOOD STATISTICS ----
+#### ---- NEIGHBORHOOD STATISTICS ---- ####
 
 #quick foray into neighborhood statistics
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
@@ -305,8 +302,7 @@ names(stack) <- c("perc_veg", "elev", "dist_road", "dist_waterhole")
 stack
 
 
-
-# ---- USING EXTRACT ----
+#### ---- USING EXTRACT ---- ####
 
 #cool. now we will use extract to extract values for each of our 1000 random points
 #from each of our four raster layers

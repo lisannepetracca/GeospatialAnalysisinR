@@ -2,6 +2,7 @@
 
 #set your working directory
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 
 #get the working directory and save as an object wd to access later
 wd<-getwd()
@@ -384,7 +385,7 @@ ggplot(data = world)+
   theme(panel.grid.major =
           element_line(color = gray(.5), 
                        linetype = 'dashed', linewidth = 0.5),
-        panel.background = element_rect(fill = 'aliceblue'))+
+      panel.background = element_rect(fill = 'aliceblue'))+
   #add text for labels
   geom_text(data= world_points,aes(x=x,y=y, label=name), 
             color = "gray20", size=4,
@@ -424,19 +425,19 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" ,password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP
-s<-	movebank_download_study(6925808)
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 449 AND 450
+s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
 #'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf' #into the previous line- 
 #'let's do that
-s<-	movebank_download_study(6925808,'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf')
+s <- movebank_download_study(6925808, 'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf')
 
 #this should take less that 20 or so seconds with a fast connection
 
 #lets convert it data frame and add coordinates using the sf package (compatable with the move package)
-fisher<-data.frame(s,sf::st_coordinates(s))
-fisher<-vect(fisher, c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
+fisher <- data.frame(s,sf::st_coordinates(s))
+fisher <- vect(fisher, c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs") #if loading data frame
 
 #look at data
 head(fisher)
@@ -449,7 +450,7 @@ writeVector(fisher,"fisherdata.shp")
 #fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
-fisher<-na.omit(fisher,geom=T)
+fisher <- na.omit(fisher,geom=T)
 
 #look at how many points per individual
 table(fisher$individual_local_identifier)
@@ -467,42 +468,42 @@ mapview::mapview(fisher, zcol = "individual_local_identifier")
 #from spatVector to sp. This package has some other useful movement statistics - check it out!
 
 #to run home range we need only the individual id and coords in a spatial points class
-fisher.drop<-as((fisher[,"individual_local_identifier"]),"Spatial")
+fisher.drop <- as((fisher[,"individual_local_identifier"]), "Spatial")
 
 #lets create a separate file for each individual
 #initalize vector to store names of home range shapefiles
-l<-rep(NA,length(unique(fisher.drop$individual_local_identifier)))
+l <- rep(NA, length(unique(fisher.drop$individual_local_identifier)))
 
 #loop through all unique individuals, calculate 95% Minimum convex polygon, rename shapefile by individual, save as shapefile,
 #plot the MCP and add the name of the shapefile to l
 for (i in 1:length(unique(fisher.drop$individual_local_identifier))) { #for 1: number of individuals
-  sub<-fisher.drop[fisher.drop$individual_local_identifier==unique(fisher.drop$individual_local_identifier)[i],]
+  sub <- fisher.drop[fisher.drop$individual_local_identifier==unique(fisher.drop$individual_local_identifier)[i],]
   #subset data for that individual
-  sub$individual_local_identifier<-droplevels(sub$individual_local_identifier)
+  sub$individual_local_identifier <- droplevels(sub$individual_local_identifier)
   #drop other individul factor levels because it was throwing an error
-  mcp<-mcp(sub, percent=95)
+  mcp <- mcp(sub, percent=95)
   #calculate 95% mcp - for that individual store in object mcp
-  assign(paste("MCP.",unique(fisher.drop$individual_local_identifier)[i],sep=""),mcp)
+  assign(paste("MCP.", unique(fisher.drop$individual_local_identifier)[i], sep=""), mcp)
   #rename mcp object as MCP.[individual id] using assign() - I'm a fan of this function
-  vect(get(paste("MCP.",unique(fisher.drop$individual_local_identifier)[i],sep="")),
-       paste("95p_MCP_",unique(fisher.drop$individual_local_identifier)[i],".shp",sep=""),overwrite=TRUE)
+  vect(get(paste("MCP.", unique(fisher.drop$individual_local_identifier)[i], sep="")),
+       paste("95p_MCP_", unique(fisher.drop$individual_local_identifier)[i], ".shp", sep=""), overwrite=TRUE)
   #write a shapefile for the newly assigned MCP.[individual id] object, name it 95p_MCP_[individual Id]
   #the get() function takes the text and gets the r object with that name
-  print(paste("MCP.",unique(fisher.drop$individual_local_identifier)[i],sep=""))
+  print(paste("MCP.",unique(fisher.drop$individual_local_identifier)[i], sep=""))
   #print the MCP.[individual Id] to track progress
-  l[i]<-c(paste("MCP.",unique(fisher.drop$individual_local_identifier)[i],sep=""))
+  l[i] <- c(paste("MCP.", unique(fisher.drop$individual_local_identifier)[i], sep=""))
   #store the MCP.[individual.Id] in vector to access later
   
   #and a simple plot for each to examine
   plot(mcp, col=i)
-  plot(sub,add=T,pch=16)
+  plot(sub, add=T, pch=16)
 }
 
 #so we did all that but if we just wanted the home ranges all in one shapefile we could do this
-fast<-(mcp(fisher.drop, percent=95))
+fisher.mcp.all <- (mcp(fisher.drop, percent=95))
 
 #look at the home ranges
-plot(fast)
+plot(fisher.mcp.all)
 
 #####GATHER COVARIATES
 #so now we have MCPs we need to get our covariates organized. We are using canopy and elevation
@@ -513,7 +514,7 @@ plot(fast)
 #this package is awesome because it crops NLCD as it brings it in otherwise the dataset is HUGE
 #canopy<-get_nlcd(template = fisher , year = 2016, dataset = "canopy", label = "fisher canopy", force.redo = T)
 #bring in canopy layer if get_nlcd() is not working
-canopy<-rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
+canopy <- rast("Example_Fisher/nlcd_canopy.tif")#Alternatively load raster from file
 
 #everything needs to be in the same crs and matching extents. We can reproject our NLCD layers to match the fisher locations
 #NLCD uses EPSG:5070 for their products.
@@ -522,12 +523,13 @@ canopy <- crop(canopy, fisher)
 plot(canopy)
 
 #let's also pull in an elevation raster using FedData
-elev <- get_ned(template =fisher, label = "fisher elev", force.redo = T)
+elev <- get_ned(template = fisher, label = "fisher elev", force.redo = T)
 elev <- project(elev, canopy)
 elev <- crop(elev, canopy)
 plot(elev)
 
 fisher_sf <- st_as_sf(fisher.drop)
+
 #let's look at our canopy layer with the fisher locations
 ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
   geom_sf(data = fisher_sf, color = "red", alpha = 0.2) +
@@ -544,7 +546,7 @@ fisher_ids <- unique(fast_sf$id)
 for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges stored in l
   out <- fast_sf[fast_sf$id == fisher_ids[i],] #get all rows that match our fisher id
   #because we will need it in this class to sample random points in a minute
-  out<-st_transform(out,crs(canopy))#transform it to the crs of our canopy layer
+  out <- st_transform(out, crs(canopy))#transform it to the crs of our canopy layer
   #assign(paste(l[i],sep=""),out) #assign it the same name it had MCP.[individual Id]
   p.out <- ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
     geom_sf(data = out, color = "red", fill = NA, lwd = 2) +
@@ -560,41 +562,41 @@ for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges 
 # we have used points, these are our GPS data-lets create a dummy variable 'used' and input a 1 
 #for these data
 #add new column to fisher to name used points with 1
-fisher$used<-1
+fisher$used <- 1
 
 #plot the used points
-plot(fisher,col=(fisher$used)+1,pch=16,cex=0.5)
+plot(fisher, col=(fisher$used)+1, pch=16, cex=0.5)
 
 #look at fisher
 names(fisher)
 
 #subset fisher to just used and individual columns, call it fish
-fish<-fisher[,c("used","individual_local_identifier")]
-fish
+fisher.subset <- fisher[,c("used", "individual_local_identifier")]
+fisher.subset
 
 #Okay now we need to compare used to what was available to each individual in their home range
 #loop through each home range and sample as many points as there are points for that individual, 
 #add a column used with the label 0, bind to the used GPS points
 for (i in 1:length(l)){#for 1: number of home ranges
-  out <- spatSample(vect(get(l[i])), nrow(fisher[fisher$individual_local_identifier==
-                                             unique(fisher.drop$individual_local_identifier)[i],]), method="random")
+  out <- spatSample(vect(get(l[i])), 
+            nrow(fisher[fisher$individual_local_identifier==unique(fisher.drop$individual_local_identifier)[i],]), method="random")
   #sample X random points from home range i, where X=the number of used points for that individual
-  out$used<-0
+  out$used <- 0
   #add a column to out that has tthe dummy variable used, but used =0 (i.e., unused)
-  fish<-rbind(fish,out)
+  fish <- rbind(fish,out)
   #bind the new available points to the used data and all previously sampled available points
 }
 
 #plot the used and available points
-plot(fish,col=(fish$used)+1,pch=16,cex=0.5)
+plot(fish,col=(fish$used)+1, pch=16, cex=0.5)
 
 #The next step is to extract covariate values to the points
 
 #extract raster data to points
-fish$LC<-terra::extract(canopy,fish,ID=F,method="bilinear")
-fish$ele<-terra::extract(elev,fish,ID=F,method="bilinear")
+fish$LC <- terra::extract(canopy,fish,ID=F,method="bilinear")
+fish$ele <- terra::extract(elev,fish,ID=F,method="bilinear")
 
-model<-glm(used~-1+scale(LC)+scale(as.numeric(ele)), data=fish,family='binomial') #takes a few moments to run 
+model<-glm(used ~ -1 + scale(LC) + scale(as.numeric(ele)), data=fish, family='binomial') #takes a few moments to run 
 #look at our model summary
 summary(model)
 
@@ -605,40 +607,39 @@ summary(model)
 
 #so lets get values for our covariates across the landscape
 #create grid of points across landscape
-samp<-spatSample (ext(fisher), size=100000, method="regular",lonlat=F)
+samp <- spatSample(ext(fisher), size=100000, method="regular", lonlat=F)
 plot(samp)
 
-pred.temp<-vect(samp)
+pred.temp <- vect(samp)
 
 #extract values
-pred.temp$LC<-terra::extract(canopy,pred.temp,ID=F,method="bilinear")
-pred.temp$ele<-terra::extract(elev,pred.temp,ID=F,method="bilinear")
+pred.temp$LC <- terra::extract(canopy,pred.temp, ID=F, method="bilinear")
+pred.temp$ele <- terra::extract(elev,pred.temp, ID=F, method="bilinear")
 
 #remove NAs for predict
-pred.temp<-na.omit(pred.temp,geom=T)
+pred.temp <- na.omit(pred.temp, geom=T)
 
 #Create newdata from these files
-newdata<-data.frame(pred.temp)
+newdata <- data.frame(pred.temp)
 
 #create predictions across surface
-pred.temp$pred<-as.numeric(predict(model,newdata=newdata,type='response'))
+pred.temp$pred <- as.numeric(predict(model, newdata=newdata, type='response'))
 
 #scale predictions so values are between 0 and 1
-pred.temp$pred<-(pred.temp$pred-min(pred.temp$pred,na.rm=T))/(max(pred.temp$pred,na.rm=T)-min(pred.temp$pred,na.rm=T))
+pred.temp$pred <- (pred.temp$pred-min(pred.temp$pred,na.rm=T))/(max(pred.temp$pred,na.rm=T)-min(pred.temp$pred,na.rm=T))
 
 #NLCD is super fine scale and takes too much memory to process
 #need to lower resolution of NLCD raster for processing
 #convert our background point predictions to a raster 
-rsf.preds<-rasterize(pred.temp,aggregate(canopy,fact=6),field="pred")
+rsf.preds <- rasterize(pred.temp, aggregate(canopy, fact=6), field="pred")
 
 #plot it!
 plot(rsf.preds)
 
 #add the home ranges to the map
 for (i in 1:length(l)){
-  plot((get(l[i])),lwd=3,add=T)
+  plot((get(l[i])), lwd=3, add=T)
 }
-
 
 
 #### BONUS (if time allows): LANDSCAPE METRICS OF MCPs   #############################################################################################################
@@ -650,7 +651,7 @@ for (i in 1:length(l)){
 #let's get nlcd land cover using the FedData package again
 nlcd <- get_nlcd(fisher, year = 2016, dataset = "landcover", label = "Fisher Landcover", force.redo = T)
 
-#Alternatively let's use our downloaded tif file
+#Alternatively let's use our downloaded raster file
 #nlcd <- rast("Example_Fisher/NLCD_Fish.tiff")
   
 #we will need our MCPs to be the same crs as nlcd. we can keep using our sf mcp object (fast_sf)
@@ -672,10 +673,10 @@ names(mcp_lc_stack) <- fast_sf$id #reassign individual names to our list element
 #plot one from the list for an example
 plot(mcp_lc_stack[[1]])
 
-#we can use lapply to run a suite of landscape metrics on individual MCPs separately
-#lapply will run a function on every element of a list (like a for loop, but generally quicker processing)
+#we can use lapply to run a named vector of landscape metrics on individual MCPs
+#lapply will run a function on every element of a list (like a for loop, but usually quicker processing)
 #in this example for each class we can calculate the proportion of land cover (pland), edge density (ed), and contiguity value (contig, i.e., connectivity)
-#to do this we call the calculate_lsm() function and using c() input all of the metrics we would like to calculate
+#to do this we call the calculate_lsm() function and using c() to input all of the metrics we would like to calculate
 #https://r-spatialecology.github.io/landscapemetrics/
 class_metrics <- lapply(mcp_lc_stack, function(x) calculate_lsm(x, what = c("lsm_c_pland", "lsm_c_ed", "lsm_c_contig_mn")))
 
@@ -685,7 +686,7 @@ evergreen_list <- lapply(class_metrics, function(x) filter(x, class == 42)) #app
 #pivot to a wide format so each individual mcp is a row and columns are the different metrics
 evergreen_metrics <- lapply(evergreen_list, function(x) pivot_wider(x, names_from = metric, values_from = value)) 
 evergreen_df <-  bind_rows(evergreen_metrics, .id = "individual") #combines our list elements into a dataframe
-evergreen_df
+evergreen_df #take a look
 
 #we can also retain all cover class and output as a csv
 metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = metric, values_from = value))

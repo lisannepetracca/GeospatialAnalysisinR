@@ -84,7 +84,7 @@ state <- "state"
 source <- c(tx, rds, state) #going to bind folder pathways into vector to reference later
 
 # Create directories if they don't exist
-for (dir in root) {
+for (dir in source) {
   if (!dir.exists(dir)) dir.create(dir)
 }
 
@@ -107,11 +107,10 @@ for (i in 1:length(files)) { #iterate through each instance of files (aka run th
 }
 
 
-
 #look in detail at loop
 i=1 #set iteration 
 files[i] #check files at that iteration
-paste(wd,root[i],sep="") #see where we are storing it
+paste(wd,"/",source[i],sep="") #see where we are storing it
 
 #read in TX WMAs, roads shapefiles, & elevation raster
 TX_WMA<-vect("TX_WMAs/WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
@@ -132,7 +131,7 @@ state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
 #The line below reads in a raster of average temperature data for all 12 months at a 5 km resolution for the USA
 raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", res = 5, var = "tavg")
 
-
+raster_temp
 #since our temperature raster is a big file what if we just crop it to the extent of our
 #WMA layer, and use only the raster layer representing June
 

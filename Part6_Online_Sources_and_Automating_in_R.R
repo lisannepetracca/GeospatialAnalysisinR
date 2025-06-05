@@ -80,7 +80,7 @@ if(i=="b"){ #run individual lines of code to check for errors
 tx <- "TX_WMAs"
 rds <- "roads" #texas roads
 state <- "state"
-root <- c(tx, rds, state) #going to bind folder pathways into vector to reference later
+source <- c(tx, rds, state) #going to bind folder pathways into vector to reference later
 
 # Create directories if they don't exist
 for (dir in root) {
@@ -98,12 +98,13 @@ files<-c(
 # Download each file into the corresponding folder with a specific filename
 for (i in 1:length(files)) { #iterate through each instance of files (aka run through 1:3 here)
   #note I prefer length(files) as opposed to 1:3, because I can add or delete files to root and files and this still works
-  zip_path <- file.path(wd, root[i], paste0("data", i, ".zip"))  # Define zip file path
+  zip_path <- file.path(wd, source[i], paste0("data", i, ".zip"))  # Define zip file path
   download.file(files[i], destfile = zip_path, mode = "wb") #download file from that instance (i) using download.file() function of files into the working directory with the corresponding root
   
   # Unzip the file into its folder
-  unzip(zip_path, exdir = file.path(wd, root[i])) #unzip the folder corresponding to wd + particular root
+  unzip(zip_path, exdir = file.path(wd, source[i])) #unzip the folder corresponding to wd + particular root
 }
+
 
 
 #look in detail at loop

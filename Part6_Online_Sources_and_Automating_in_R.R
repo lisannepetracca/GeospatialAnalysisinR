@@ -6,27 +6,11 @@ setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_
 
 #get the working directory and save as an object wd to access later
 wd<-getwd()
-library(terra)
-library(tidyterra)
-library(ggplot2)
-library(viridis)
-library(ggspatial)
-library(rgbif)
-library(ggmap)
-library(move2)
-library(adehabitatHR)
-library(FedData)
-library(raster)
-library(mapview)
-library(sf)
-library(landscapemetrics)
-library(tidyverse)
-library(prism)
-library(rnaturalearth)
-library(hexbin)
-library(rnaturalearthdata)
-library(keyring)
-library(geodata)
+library(terra); library(tidyterra); library(ggplot2); library(viridis)
+library(ggspatial); library(rgbif); library(ggmap); library(move2)
+library(adehabitatHR); library(FedData); library(raster); library(mapview)
+library(sf); library(landscapemetrics); library(tidyverse); library(rnaturalearth)
+library(hexbin); library(rnaturalearthdata); library(keyring); library(geodata)
 
 # ---- USING LOOPS ----
 
@@ -493,7 +477,7 @@ for (i in 1:length(unique(fisher_drop$individual_local_identifier))) { #for 1: n
 fisher_mcp_all <- (mcp(fisher_drop, percent=95))
 
 #look at the home ranges
-plot(fisher_mcp_all)
+mapview(fisher_mcp_all, zcol = "id", lwd = 3)
 
 #####GATHER COVARIATES
 #so now we have MCPs we need to get our covariates organized. We are using canopy and elevation
@@ -522,8 +506,8 @@ fisher_sf <- st_as_sf(fisher_drop)
 
 #let's look at our canopy layer with the fisher locations
 ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
-  geom_sf(data = fisher_sf, color = "red", alpha = 0.2) +
-  scale_fill_viridis(name = "canopy cover (%)", na.value = "transparent") + theme_bw() +
+  geom_sf(data = fisher_sf, color = "black", alpha = 0.2) +
+  scale_fill_gradient(name = "canopy cover (%)", low = "white", high = "darkgreen", na.value = "transparent") + theme_bw() +
   facet_wrap(~individual_local_identifier, ncol = 2)
 
 #we can also plot single individual home ranges and use a loop 
@@ -541,7 +525,7 @@ for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges 
   #assign(paste(l[i],sep=""),out) #assign it the same name it had MCP.[individual Id]
   p.out <- ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you want to display all cells
     geom_sf(data = out, color = "red", fill = NA, lwd = 2) +
-    scale_fill_viridis(name = "canopy cover (%)", na.value = "transparent") + theme_bw()
+    scale_fill_gradient(name = "canopy cover (%)", low = "white", high = "darkgreen", na.value = "transparent")  + theme_bw()
   print(p.out)
   #use ggsave to save outputs as pdfs/tifs/jpegs
   #ggsave(paste0("MCP_95_", fisher_ids[i], ".pdf"))  #example
@@ -579,7 +563,7 @@ for (i in 1:length(l)){#for 1: number of home ranges
 }
 
 #plot the used and available points
-plot(fisher_subset,col=(fisher_subset$used)+1, pch=16, cex=0.5, alpha = 0.2)
+plot(fisher_subset, col=(fisher_subset$used)+1, pch=16, cex=0.5, alpha = 0.2)
 
 #The next step is to extract covariate values to the points
 

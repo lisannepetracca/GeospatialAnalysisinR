@@ -26,6 +26,7 @@ library(rnaturalearth)
 library(hexbin)
 library(rnaturalearthdata)
 library(keyring)
+library(geodata)
 
 # ---- USING LOOPS ----
 
@@ -121,32 +122,21 @@ state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
 #roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
 
-# ---- WORKING WITH PRISM CLIMATE DATA ----
+# ---- WORKING WITH WORLDCLIM CLIMATE DATA ----
 
 #Now you have all of the roads and WMAs in Texas downloaded
 #But hey, it gets hot in Texas! Let's use an online climate database to show temps across the state in June
-#We will now read in data from Oregon State's PRISM service (https://prism.oregonstate.edu/)
-#PRISM only has data available for the continental U.S.; however, other online databases 
-#(such as WorldClim, https://worldclim.org/) have global climate data free to download
+#We will now read in open source data from WorldClim (https://www.worldclim.org/)
 
-prism_set_dl_dir(wd) #Tell PRISM where your working directory is
-# Download the climate normals for mean temperature between January and February at 800 m resolution
-get_prism_normals("tmean", "800m", mon = 1:6, keepZip = FALSE) #ignore warning
-#the term "climate normals" refers to the most recent 30 year average
-#this can take a minute or two
+#We use the worldclim_country function from the geodata package
+#The line below reads in a raster of average temperature data for all 12 months at a 5 km resolution for the USA
+raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", res = 5, var = "tavg")
 
-#Here, we want to select the June temperature normal
-junetemp <- prism_archive_subset(
-  "tmean", "monthly normals", mon = 6, resolution = "800m"
-)
-
-temprast <- pd_to_file(junetemp)#Here, we export he prism data to our working directory
-tmean_rast <- rast(temprast)#We then read the prism file back in as a raster using the terra package
 
 #since our temperature raster is a big file what if we just crop it to the extent of our
-#WMA layer
+#WMA layer, and use only the raster layer representing June
 
-mask.temp<- mask(tmean_rast, state_bound) #IGNORE WARNING
+mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING
 plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
 plot(roads, add=T,col="black")
 plot(TX_WMA, add=T, border=NA, col="orange") 

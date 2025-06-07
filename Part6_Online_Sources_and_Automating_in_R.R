@@ -445,8 +445,8 @@ head(fisher)
 writeVector(fisher,"fisherdata.shp")
 
 #read in shapefile instead of downloading; read next 2 lines
-#fisher<-vect("Example_Fisher/fisherdata.shp")
-#fisher$individual_local_identifier<-as.factor(fisher$individual)
+# fisher<-vect("Example_Fisher/fisherdata.shp")
+# fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher<-na.omit(fisher,geom=T)

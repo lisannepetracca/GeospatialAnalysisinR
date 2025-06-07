@@ -2,7 +2,7 @@
 
 #let's set our working directory first
 #setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
-setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+# setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
 
 #let's load all the libraries we need
 library(ggplot2)
@@ -33,7 +33,8 @@ Hwange_pts <- spatSample(Hwange, size=1000, method="random")
 
 #You can use mapview to show multiple spatial datasets! This is via using a '+' sign between mapview calls or using lists
 #We can also adjust our visualization by using a few different commands. Color = fill of color of object, alpha.regions = transparency, and lwd = thickness of the polygon outline
-mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) + mapview(Hwange_pts)
+mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) +
+  mapview(Hwange_pts)
 
 #what does this look like using ggplot?
 ggplot() +
@@ -41,7 +42,7 @@ ggplot() +
   geom_spatvector(data=Hwange_pts, color = "black", size=1)+
   ggtitle("1000 Random Points in Hwange NP")
 #depending on your version of R you may need to change the 'size' argument to 'lwd' for lines
-
+# note that it displays in lat/long by default, if you want to plot in UTM, have to use  coord_sf() function e.g coord_sf(datum=crs("EPSG:32616")
 #now let's bring in our waterholes and roads 
 roads <- vect("Example_Zimbabwe/ZWE_roads.shp")
 waterholes <- vect("Example_Zimbabwe/waterholes.shp")
@@ -81,7 +82,7 @@ elev <- rast("Example_Zimbabwe/aster_image_20160624.tif")
 
 #how can we get an overview of the imported raster?
 #what does this tell us?
-elev
+elev #notice small resolution because we are still in degrees
 
 #this is great, but can we get more stats beyond min/max?
 #how can we get, say, quartiles of the data?
@@ -109,7 +110,7 @@ Hwange_WGS <- project(Hwange, "EPSG:4326")
 
 #let's see what it looks like now!
 #add=T adds the Hwange boundary to the existing plot 
-plot(Hwange_WGS,add=T)
+plot(Hwange_WGS,add=T, lwd = 5)
 
 
 # ---- USING CROP AND MASK TOOLS ----
@@ -200,7 +201,7 @@ veg_crop <- crop(percveg, elev_crop_UTM)
 
 #let's see what it looks like now!
 plot(veg_crop)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="grey",col=NA,lwd=5,add=T)
 
 
 # ---- MAKING A RASTER STACK ----
@@ -265,7 +266,7 @@ distroad_raster <- distance(raster_extent, roads_hwange)
 
 #we're done! let's plot the output
 plot(distroad_raster)
-plot(roads_hwange, col="black",lwd=2,add=T)
+plot(roads_hwange, col="grey",lwd=2,add=T)
 
 #now let's calculate distance from points using distance()
 #creating another empty raster
@@ -276,7 +277,7 @@ distwater_raster <- distance(raster_extent, waterholes)
 
 #plotting the output
 plot(distwater_raster)
-plot(waterholes, col="black",lwd=2,add=T)
+plot(waterholes, col="light blue",lwd=2,add=T)
 
 #let's write this to raster to we can use it later
 writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
@@ -288,7 +289,8 @@ writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
 #quick foray into neighborhood statistics
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
 #we are using 15 cells here to show how the values are "smoothed out" visually
-elev_focal <- focal(elev_crop_match, w=15, fun=mean, na.rm=TRUE)
+elev_focal <- focal(elev_crop_match, w=15, #number of pixels 
+                    fun=mean, na.rm=TRUE)
 #let's plot them together and compare
 elev_stack <- c(elev_crop_match, elev_focal)
 plot(elev_stack)

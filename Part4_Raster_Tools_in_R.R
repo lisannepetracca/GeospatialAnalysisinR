@@ -157,7 +157,7 @@ plot(Hwange, border="black", col=NA, lwd=5, add=T)
 
 #we are going to write this raster to file so we can use it later
 #set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
-writeRaster(elev_crop_UTM, "Example_Zimbabwe/elev_Hwange.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
+writeRaster(elev_crop_UTM, "Part4_RasterTools_Outputs/elev_Hwange.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
 
 #what if we wanted to plot in ggplot? - use geom_spatraster!
 ggplot() +
@@ -191,7 +191,7 @@ percveg[percveg > 100 | percveg<0] <- NA
 plot(percveg)
 
 #let's see what it looks like with Hwange NP
-plot(Hwange, border="black", col=NA, lwd=2, add=T)
+plot(Hwange, border="grey", col=NA, lwd=2, add=T)
 
 #let's see the spread in values for a subset of cells
 hist(percveg) #IGNORE WARNING
@@ -276,7 +276,7 @@ distwater_raster <- distance(raster_extent, waterholes)
 
 #plotting the output
 plot(distwater_raster)
-plot(waterholes, col="light blue", lwd=2, add=T)
+plot(waterholes, col="grey", lwd=2, add=T)
 
 #let's write this to raster to we can use it later
 writeRaster(distwater_raster, "Part4_RasterTools_Outputs/Dist_Waterhole_Hwange.tif", overwrite=T)
@@ -394,6 +394,7 @@ idw <- gstat::idw(para_den ~ 1, waterholes_sf, newdata=grid)
 #we also tell the function which field we want to use as our raster cell values (field = "var1.pred")
 para_den_idw <- rasterize(idw, elev_crop_4km, field = "var1.pred")
 para_den_idw <- mask(para_den_idw, Hwange)
+mapview(para_den_idw)
 
 #second approach: kriging
 #unlike the previous approaches that are deterministic (based on distances), kriging is probabilistic and relies on statistical properties of observations

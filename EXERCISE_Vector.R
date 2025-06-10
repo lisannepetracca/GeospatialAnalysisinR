@@ -40,6 +40,8 @@ tigra_1km2_grid_isect <- crop(tigra_1km2_grid, Tigra)
 tigra_1km2_grid_isect
 
 #create stratified random points
+#let's set a seed so anyone following this code will have the same outputs
+set.seed(181)
 random_points <- spatSample (tigra_1km2_grid_isect, size=rep(2,105), method="random")
 
 #plot!

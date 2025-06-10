@@ -347,7 +347,7 @@ plot(elev)
 #are now interested in predicting what parasite density might look like in unsampled locations
 
 #we first need some data
-waterholes_df <- read.csv("Example_Zimbabwe/waterholes_parasite_data.shp") #read in our data as a csv file
+waterholes_df <- read.csv("Example_Zimbabwe/waterholes_parasite_data.csv") #read in our data as a csv file
 
 #next we need to convert our data frame to a spatial object
 #let's make this an sf object using st_as_sf() where we input the object, coordinates, and the crs of our data

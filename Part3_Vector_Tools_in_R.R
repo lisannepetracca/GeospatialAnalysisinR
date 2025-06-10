@@ -87,7 +87,7 @@ nrow(NationalParks)
 
 #if we want to save this super-cool geometry, we can do
 PAs$NOMBRE
-write.csv(PAs, "Honduras_PA_areas.csv", row.names=F, fileEncoding = "ISO-8859-1") 
+write.csv(PAs, "Part3_VectorTools_Outputs/Honduras_PA_areas.csv", row.names=F, fileEncoding = "ISO-8859-1") 
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
 #let's use subsetting with brackets again
@@ -130,6 +130,10 @@ ggplot() +
   #add title and subtitle
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
+#let's write this to a .jpg using ggsave()
+ggsave("Part3_VectorTools_Outputs/Honduras_Large_PAs.jpg", height=4, width=6, units = "in", dpi=300)
+
+
 #what if we wanted to display PAs as a function of PA size?
 ggplot() + 
   #adds protected areas, with fill by AREA
@@ -143,6 +147,10 @@ ggplot() +
   labs(fill = bquote("Area (km"^2*")")) +
   #add title and subtitle
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
+
+#let's write this to a .jpg using ggsave()
+ggsave("Part3_VectorTools_Outputs/Honduras_PA_Size.jpg", height=4, width=6, units = "in", dpi=300)
+
 
 #what if we are interested in selecting only those large PAs that intersect Honduras roads?
 #read in the shapefile with vect()
@@ -202,7 +210,7 @@ ggplot() +
 #let's convert it to a data frame and then save as .csv
 #the geom="XY" is important because it preserves the X and Y coordinates
 PA_centroids_df <- as.data.frame(PA_centroids, geom="XY")
-write.csv(PA_centroids_df, "PA_centroids.csv", fileEncoding = "ISO-8859-1", row.names=F)
+write.csv(PA_centroids_df, "Part3_VectorTools_Outputs/PA_centroids.csv", fileEncoding = "ISO-8859-1", row.names=F)
 
 
 
@@ -236,7 +244,7 @@ mapview(camlocs_vec)
 
 #now let's save this to a .shp if we want to use it in ArcMap 
 writeVector(camlocs_vec,
-         "camera_locations.shp", filetype = "ESRI Shapefile", overwrite=T) 
+         "Part3_VectorTools_Outputs/camera_locations.shp", filetype = "ESRI Shapefile", overwrite=T) 
 
 #let's first get a distance matrix between points
 #pairs = T such that we are getting distances for all pairs of points
@@ -333,7 +341,8 @@ ggplot() +
 #how can we get the area (in square km) of this new polygon?
 (expanse(cam_convexhull_land, unit="km"))
 
-
+#let's write this to a .jpg using ggsave()
+ggsave("Part3_VectorTools_Outputs/Honduras_Camera_Locations.jpg", height=4, width=6, units = "in", dpi=300)
 
 
 
@@ -424,7 +433,7 @@ ggplot() +
 
 #let's save these points to a .csv
 random_points_df <- as.data.frame(random_points, geom="XY") #remember, geom=XY retains the coordinates
-write.csv(random_points_df, "RandomPoints_PicoBonito.csv", row.names=F)
+write.csv(random_points_df, "Part3_VectorTools_Outputs/RandomPoints_PicoBonito.csv", row.names=F)
 
 #check it!
-head(read.csv("RandomPoints_PicoBonito.csv"))
+head(read.csv("Part3_VectorTools_Outputs/RandomPoints_PicoBonito.csv"))

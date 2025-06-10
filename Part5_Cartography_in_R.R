@@ -403,7 +403,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.33, #you will have to play with these values a bit to get them right!
+            x = -0.35, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 #ok, we are nearly there! 
@@ -428,7 +428,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.33, #you will have to play with these values a bit to get them right!
+            x = -0.35, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
 #let's write this to a .jpg using ggsave()

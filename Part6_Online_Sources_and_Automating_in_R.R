@@ -104,6 +104,7 @@ state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
 #Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
 #roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
+#state_bound<-vect("Example_TX/Tx_Bndry_General_TIGER5m.shp")
 
 # ---- WORKING WITH WORLDCLIM CLIMATE DATA ----
 
@@ -112,8 +113,8 @@ state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
 #We will now read in open source data from WorldClim (https://www.worldclim.org/)
 
 #We use the worldclim_country function from the geodata package
-#The line below reads in a raster of average temperature data for all 12 months at a 5 km resolution for the USA
-raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", res = 5, var = "tavg")
+#The line below reads in a raster of average temperature data for all 12 months at a 10 minute resolution for the USA
+raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", res = 10, var = "tavg")
 
 raster_temp
 #since our temperature raster is a big file what if we just crop it to the extent of our
@@ -165,10 +166,10 @@ ggplot() + geom_spatraster(data = nlcd_wma) +
   coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
 
 #lets create a folder for it
-dir.create(paste0(getwd(),"/SiteMaps"))
+dir.create(paste0(getwd(),"/Part6_OnlineDataSources_Outputs/SiteMaps"))
 
 #And save it!
-pdf("SiteMaps/SiteMap1.pdf",height=5,width=5)
+pdf("Part6_OnlineDataSources_Outputs/SiteMaps/SiteMap1.pdf",height=5,width=5)
 ggplot() + geom_spatraster(data = nlcd_wma) + 
   geom_polygon(data = geo_dat_coords,aes(x=x,y=y), 
                color = "black", fill = NA, alpha=0.5, lwd=1) + 
@@ -208,7 +209,7 @@ for (i in 1:length(unique(TX_WMA$LoName))){
     coord_sf(xlim = c(x.min, x.max), ylim = c(y.min, y.max))
   
   #and now make and save a new map, make sure to save based on i to not overwrite
-  pdf(paste0("SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
+  pdf(paste0("Part6_OnlineDataSources_Outputs/SiteMaps/",unique(TX_WMA$LoName)[i],".pdf"),height=5,width=5)
   plot(site.map)
   dev.off()
   if (i==7)break## add this because we don't really need to go thru and map all 84
@@ -385,7 +386,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
     coord_sf()
   plot(map) # plot the map in the R environment
   
-  pdf(paste(unique(sub$species)[1],Sys.Date(),".pdf",sep=""),height=6,width=6) #print a pdf to your working directory of species i, 
+  pdf(paste("Part6_OnlineDataSources_Outputs/", unique(sub$species)[1],Sys.Date(),".pdf",sep=""),height=6,width=6) #print a pdf to your working directory of species i, 
   #title it by species i and the date
   plot(map) #you are plotting the map in the pdf
   dev.off() #closing the graphics device for the pdf
@@ -399,7 +400,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 439 AND 440
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 425 AND 426
 s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -420,13 +421,9 @@ head(fisher)
 writeVector(fisher,"fisherdata.shp")
 
 #read in shapefile instead of downloading; read next 2 lines
-<<<<<<< HEAD
+
 # fisher<-vect("Example_Fisher/fisherdata.shp")
 # fisher$individual_local_identifier<-as.factor(fisher$individual)
-=======
-fisher <- vect("Example_Fisher/fisherdata.shp")
-fisher$individual_local_identifier <- as.factor(fisher$individual)
->>>>>>> 770b02a1281b3fc38401ffd949a649caa9ba9506
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher <- na.omit(fisher,geom=T)

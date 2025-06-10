@@ -51,11 +51,11 @@ spatvector.df<-cbind(pts,attributes)
 spatvector.df
 
 #write sv.df to a shapefile using function writeVector() 
-writeVector(spatvector.df,"Part2_Basic_Spatial_Operations/myshapefile.shp",overwrite=T)
+writeVector(spatvector.df,"Part2_SpatialOperations_Outputs/myshapefile.shp",overwrite=T)
 #Does it have to be in shapefile format? NO!! https://gdal.org/drivers/vector/index.html 75+ drivers! 
   
 #read in myshapefile using the vect() function 
-shp <- vect("Part2_Basic_Spatial_Operations/myshapefile.shp")
+shp <- vect("Part2_SpatialOperations_Outputs/myshapefile.shp")
 
 #Inspect and check loaded simple features object created from the shapefile
 shp #look at shp
@@ -137,10 +137,10 @@ crs(raster,describe=T)
 plot(raster,col=c("black","green"))
 
 #save raster to file
-writeRaster(raster,"Part2_Basic_Spatial_Operations/myraster.tif",overwrite=T)
+writeRaster(raster,"Part2_SpatialOperations_Outputs/myraster.tif",overwrite=T)
 
 #load raster from file
-raster_2 <- rast("Part2_Basic_Spatial_Operations/myraster.tif")
+raster_2 <- rast("Part2_SpatialOperations_Outputs/myraster.tif")
 
 #plot raster to inspect
 plot(raster_2,col=c("black","purple"))

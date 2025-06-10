@@ -98,6 +98,9 @@ ggplot() +
         legend.box.background = element_rect(linewidth = 1)) + #adds a legend box of width 1
   coord_sf()
 
+#if we want to save this as a .jpg, let's use ggsave()
+#if it asks if you want to create a new directory, type "1" for yes!
+ggsave("Part5_Cartography_Outputs/Hwange_waterholes.jpg", height=4, width=6, units = "in", dpi=300)
 
 #ok, so that's great for plotting a single shapefile
 #what if we are interested in plotting multiple shapefiles?
@@ -152,6 +155,9 @@ ggplot()+
                                              "spring" = "deepskyblue3"),
                                      shape=c(NA,16,16,16))),
          )
+
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_waterholes_and_roads.jpg", height=4, width=6, units = "in", dpi=300)
 
 #what if we want new shapes?
 #let's make the waterholes diamonds instead of circles
@@ -252,6 +258,9 @@ ggplot() +
                     labels=c("800 - 900", "900 - 1000", 
                              "1000 - 1100", "1100 - 1200"), na.translate=F) #changes legend labels
 
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_elevation_4classes.jpg", height=4, width=6, units = "in", dpi=300)
+
 #cool. how would things look if this were a continuous surface?
 #we are using the viridis color palette for the continuous surface
 ggplot() +
@@ -269,7 +278,10 @@ ggplot() +
         #adjust size of legend name, labels, and box around legend
         legend.title=element_text(size=12), 
         legend.text = element_text(size=10), 
-        legend.box.background = element_rect(size=1))
+        legend.box.background = element_rect(linewidth=1))
+
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_elevation_continuous.jpg", height=4, width=6, units = "in", dpi=300)
 
 #now let's place the elevation raster in a map with Hwange NP and waterholes
 #order matters!
@@ -331,6 +343,8 @@ ggplot() +
                    linetype = 'dashed', linewidth = 0.75))+
   coord_sf()
 
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_elevation_w_waterholes.jpg", height=4, width=6, units = "in", dpi=300)
 
 
 # ---- MAKING MULTIPLOTS ----
@@ -360,6 +374,8 @@ map2 <- ggplot() +
 #let's place these together in a single map and make sure they're aligned vertically
 plot_grid(map, map2, labels = "AUTO", align="v") #labels = "auto" will use lowercase, rather than uppercase as shown here
 
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_elevation_sidebyside.jpg", height=3, width=8, units = "in", dpi=300)
 
 
 # ---- MAKING INSET MAPS ----
@@ -415,6 +431,8 @@ ggdraw() +
             x = -0.33, #you will have to play with these values a bit to get them right!
             y = 0.06)
 
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/Hwange_elevation_w_inset.jpg", height=4, width=6, units = "in", dpi=300)
 
 
 # ---- INTERACTIVE MAPS ----

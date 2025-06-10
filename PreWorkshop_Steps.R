@@ -20,7 +20,7 @@ setwd("C:/PASTE THE LOCATION OF WHERE YOUR Geospatial_Analysis_in_R FOLDER IS")
 install.packages(c("terra", "ggplot2", "rnaturalearth", "tidyterra", "viridis", "mapview",
                    "ggspatial", "cowplot", "sf", "tmap", "rgbif","keyring","ggmap","move2",
                    "adehabitatHR","FedData","raster","tidyverse","landscapemetrics","spatstat","gstat", "prism", "hexbin",
-                   "rnaturalearthdata"),dependencies=T)
+                   "rnaturalearthdata", "geodata"),dependencies=T)
 
 #*RED TEXT DOES NOT MEAN IT DIDN'T WORK. THERE IS ONLY AN ISSUE IF YOU SEE SOMETHING LIKE "Error in install.packages"***
 
@@ -49,6 +49,7 @@ library(gstat)
 library(prism)
 library(hexbin)
 library(rnaturalearthdata)
+library(geodata)
 
 #we are ALL GOOD on packages if you do not get any error messages after running these "library" lines
 

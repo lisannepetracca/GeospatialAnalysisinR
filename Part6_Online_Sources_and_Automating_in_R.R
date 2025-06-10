@@ -670,5 +670,5 @@ metrics_wider <- lapply(class_metrics, function(x) pivot_wider(x, names_from = m
 class_metrics_df <-  bind_rows(metrics_wider, .id = "column_label")
 
 #write as a csv to your working directory
-write.csv(class_metrics_df, paste0(wd, "/mcp_class_metrics.csv"), row.names = FALSE)
+write.csv(class_metrics_df, paste0(wd, "/Part6_OnlineDataSources_Outputs/mcp_class_metrics.csv"), row.names = FALSE)
 

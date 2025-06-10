@@ -35,4 +35,7 @@ distwater_df_10groups %>%
 ggplot() +
   geom_spatraster(data = distwater_10groups , aes(fill = distwater_brk)) +
   geom_spatvector(data = Hwange, color = "black", fill = NA, size=2) 
-  
+
+#let's write this to a .jpg using ggsave()
+ggsave("Part5_Cartography_Outputs/exercise_Hwange_distwater_10groups.jpg", height=4, width=6, units = "in", dpi=300)
+

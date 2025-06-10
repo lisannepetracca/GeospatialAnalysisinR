@@ -272,7 +272,7 @@ ggplot() +
 #adjust size of legend name and labels
 ggplot() +
   geom_spatraster(data = elev) +
-  scale_fill_viridis_c(option="H",name = "Elevation (m)") + #changes legend name (also note new color scheme!)
+  scale_fill_viridis_c(option="H",name = "Elevation (m)", na.value = "transparent") + #changes legend name (also note new color scheme!)
   theme(legend.position = "bottom", #moves legend to bottom
         #adjust size of legend name, labels, and box around legend
         legend.title=element_text(size=12), 
@@ -290,7 +290,7 @@ ggplot() +
   geom_spatraster(data = elev) +
   geom_spatvector(data = HwangeNP, color = "black", fill = NA, lwd=2) +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
-  scale_fill_viridis_c(name = "Elevation (m)")+
+  scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme(axis.title = element_blank())+
   coord_sf()
@@ -305,7 +305,7 @@ ggplot() +
   geom_spatvector(data = HwangeNP, color = "black", fill = NA, lwd=2) +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
   #lets make the background a bit less bright by changing the alpha values
-  scale_fill_viridis_c(option='H',name = "Elevation (m)",alpha=0.7)+
+  scale_fill_viridis_c(option='H',name = "Elevation (m)", na.value = "transparent", alpha=0.7)+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   #ggplot has a number of standard themes - I like theme_bw as a template
   #see https://ggplot2.tidyverse.org/reference/ggtheme.html for full list of themes
@@ -322,7 +322,7 @@ ggplot() +
   geom_spatraster(data = elev) +
   geom_spatvector(data = HwangeNP, color = "black", fill = NA, lwd=2) +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
-  scale_fill_viridis_c(option='H',name = "Elevation (m)",alpha=0.7)+
+  scale_fill_viridis_c(option='H',name = "Elevation (m)", na.value = "transparent", alpha=0.7)+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   #Let's add the scale bar
   annotation_scale(style="bar", #alternative style is "ticks"
@@ -356,7 +356,7 @@ map <- ggplot() +
   geom_spatraster(data = elev) +
   geom_spatvector(data = HwangeNP, color = "black", fill = NA, lwd=2) +
   geom_spatvector(data=waterholes, aes(color=factor(TYPE)), lwd=3)+
-  scale_fill_viridis_c(name = "Elevation (m)")+
+  scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+
   scale_color_manual(values = waterhole_colors, name = "Waterhole type") +
   theme_void()
 

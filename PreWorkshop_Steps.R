@@ -54,7 +54,7 @@ library(geodata)
 #we are ALL GOOD on packages if you do not get any error messages after running these "library" lines
 
 #and then read in two types of geospatial data
-elev <- rast("PreWorkShop Steps/aster_image_20160624.tif")
-honduras_boundary <- vect("PreWorkShop Steps/Honduras_Border.shp")
+elev <- rast("PreWorkShop_Steps/aster_image_20160624.tif")
+honduras_boundary <- vect("PreWorkShop_Steps/Honduras_Border.shp")
 
 #if no errors, then WHOOO HOOO! WE'RE DONE!

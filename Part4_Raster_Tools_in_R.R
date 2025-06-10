@@ -280,7 +280,7 @@ plot(distwater_raster)
 plot(waterholes, col="light blue",lwd=2,add=T)
 
 #let's write this to raster to we can use it later
-writeRaster(distwater_raster, "Dist_Waterhole_Hwange.tif", overwrite=T)
+writeRaster(distwater_raster, "Part4_RasterTools_Outputs/Dist_Waterhole_Hwange.tif", overwrite=T)
 
 
 
@@ -323,17 +323,17 @@ values <- terra::extract(stack, Hwange_pts, df=T)
 head(values)
 
 #let's write this to .csv!
-write.csv(values, "extracted_raster_values.csv", row.names=F)
+write.csv(values, "Part4_RasterTools_Outputs/extracted_raster_values.csv", row.names=F)
 
 #how can we save a single raster layer?
 #set the GeoTIFF tag for NoDataValue to -9999, the National Ecological Observatory Network’s (NEON) standard NoDataValue
-writeRaster(stack$elev, "elevation.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
+writeRaster(stack$elev, "Part4_RasterTools_Outputs/elevation.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
 
 #how can we save a raster stack?
-writeRaster(stack, "raster_stack.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
+writeRaster(stack, "Part4_RasterTools_Outputs/raster_stack.tif", filetype="GTiff", overwrite=T, NAflag=-9999)
 
 #THEN, in order to re-import the stack and use the individual raster layers, you can do the below
-stack_import<- rast("raster_stack.tif")
+stack_import<- rast("Part4_RasterTools_Outputs/raster_stack.tif")
 stack_import
 plot(stack_import)
 

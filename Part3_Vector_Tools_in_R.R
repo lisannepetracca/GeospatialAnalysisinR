@@ -104,7 +104,7 @@ ggplot() +
 #now let's add an outline of honduras, shall we?
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
 countries <- ne_download(scale = "large", type = 'countries', returnclass="sf" )
-#if this line DOES NOT WORK, skip to L. 103, remove the #, and run that line
+#if this line DOES NOT WORK, skip to L. 120, remove the #, and run that line
 #countries<- vect("Example_Honduras/Countries.shp")
 
 #let's look at the names of columns

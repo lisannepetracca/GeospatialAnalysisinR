@@ -351,6 +351,8 @@ PicoBonito <- PAs %>% filter(NOMBRE == "Pico Bonito-Zona Nucleo")
 mapview (PicoBonito)
 
 #let's create 100 random points within the PA for vegetation sampling
+#and let's set a random seed so everyone in the workshop will have points in the same place
+set.seed(181) 
 random_points <- spatSample(PicoBonito, size=100, method="random")
 
 #what does this look like?
@@ -360,6 +362,8 @@ ggplot() +
   ggtitle("100 Random Points in Pico Bonito NP")
 
 #let's try again with 100 regular points
+#let's set a seed again
+set.seed(181)
 regular_points <- spatSample (PicoBonito, size=100, method="regular")
 
 #what does this look like?

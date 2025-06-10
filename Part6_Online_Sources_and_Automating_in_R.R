@@ -236,7 +236,7 @@ Canidae
 names(Canidae)
 
 #save data as csv in working directory
-write.csv(Canidae$data,"Canidae_occ.csv")
+write.csv(Canidae$data,"Part6_OnlineDataSources_Outputs/Canidae_occ.csv")
 
 #data is in tibble which is a modified data frame- lets change it to data frame to be consistent and store it in candat
 canid_data <-data.frame(Canidae$data)
@@ -518,6 +518,7 @@ ggplot() + geom_spatraster(data = canopy) + #maxcell = ncell(canopy), if you wan
 #let's convert the fisher mcp that are a SpatialPolygonsDataFrame object to an sf object
 fisher_mcps_sf <- st_as_sf(fisher_mcp_all)
 
+#we can also use a for loop to make a plot of each individual separately
 #get the unique ids
 fisher_ids <- unique(fisher_mcps_sf$id)
 for (i in 1:length(fisher_ids)){ #for every instance in 1:number of home ranges stored in l

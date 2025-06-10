@@ -14,7 +14,7 @@ library(spatstat)
 library(gstat)
 library(sf)
 
-# ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ----
+#### ---- EXAMPLE: HWANGE NATIONAL PARK, ZIMBABWE ---- ####
 
 #first, let's read in our shapefile of Hwange NP with vect()
 Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
@@ -39,7 +39,7 @@ mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) +
 #what does this look like using ggplot?
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", lwd=1.5) +
-  geom_spatvector(data=Hwange_pts, color = "black", size=1)+
+  geom_spatvector(data = Hwange_pts, color = "black", size=1)+
   ggtitle("1000 Random Points in Hwange NP")
 #depending on your version of R you may need to change the 'size' argument to 'lwd' for lines
 # note that it displays in lat/long by default, if you want to plot in UTM, have to use  coord_sf() function e.g coord_sf(datum=crs("EPSG:32616")
@@ -49,8 +49,8 @@ waterholes <- vect("Example_Zimbabwe/waterholes.shp")
 
 #let's plot those vectors within Hwange
 ggplot() +
-  geom_spatvector(data=roads, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", size=1)+
+  geom_spatvector(data = roads, color = "black", lwd=1)+
+  geom_spatvector(data = waterholes, color= "blue", size=1)+
   geom_spatvector(data = Hwange, color = "darkgreen", fill=NA, lwd=1.5) +
   ggtitle("Roads and Waterholes in Hwange NP")
 
@@ -62,8 +62,8 @@ park_extent <- ext(Hwange)
 #here, our coordinate system is WGS 1984 UTM Zone 35S (EPSG 32735)
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", fill = "white", lwd=1.5) +
-  geom_spatvector(data=roads, color = "black", lwd=1)+
-  geom_spatvector(data=waterholes, color= "blue", size=2)+
+  geom_spatvector(data = roads, color = "black", lwd=1)+
+  geom_spatvector(data = waterholes, color= "blue", size=2)+
   ggtitle("Roads and Waterholes in Hwange NP")+
   coord_sf(datum=crs("EPSG:32735"), xlim=c(park_extent[1], park_extent[2]), ylim=c(park_extent[3], park_extent[4]))
 #that's better!
@@ -75,7 +75,7 @@ crs(roads, describe=T)
 roads_UTM <- project(roads, "EPSG:32735")
 
 
-# ---- BASIC RASTER STATISTICS ----
+#### ---- BASIC RASTER STATISTICS ---- ####
 
 #OK now time for a raster! Let's read in the elevation (it's an aster image)
 elev <- rast("Example_Zimbabwe/aster_image_20160624.tif") 
@@ -98,7 +98,7 @@ summary(values(elev)) #wrap our summary function with values() from the terra pa
 plot(elev)
 
 #what is the coordinate system? 
-crs(elev, describe=T)
+crs(elev, describe = T)
 #it's WGS84
 
 #let's add Hwange to the elevation tile 
@@ -110,10 +110,10 @@ Hwange_WGS <- project(Hwange, "EPSG:4326")
 
 #let's see what it looks like now!
 #add=T adds the Hwange boundary to the existing plot 
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add = T, lwd = 5)
 
 
-# ---- USING CROP AND MASK TOOLS ----
+#### ---- USING CROP AND MASK TOOLS ---- ####
 
 #ok, so there is a lot of extra raster that we don't want to work with
 #let's crop it to make raster processing go a bit faster
@@ -121,7 +121,7 @@ elev_crop <- crop(elev, Hwange_WGS)
 
 #let's see what it looks like now!
 plot(elev_crop)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd=5)
 
 #Quick comparison between Cropping and Masking 
 #Cropping: Removing rows and/or columns to reduce the raster extent
@@ -130,18 +130,18 @@ plot(Hwange_WGS,add=T, lwd = 5)
 #lets try a mask on the elev layer using Hwange_WGS
 elev_mask <- mask(elev, Hwange_WGS)
 plot(elev_mask)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd=5)
 #the only weird thing is that the extent stays the same as the original elev layer!
 
 #let's fix that by applying the mask after we crop the image
 elev_crop_mask <- mask(elev_crop, Hwange_WGS)
 plot(elev_crop_mask)
-plot(Hwange_WGS,add=T, lwd = 5)
+plot(Hwange_WGS, add=T, lwd=5)
 #masking can be helpful for creating maps, accounting for boundaries, and restricting any analysis to a region of interest 
 
 #Ok back to working with our cropped elevation layer
 #what's the coordinate system of the elevation raster again?
-crs(elev_crop, describe=T)
+crs(elev_crop, describe = T)
 #it's WGS 84
 
 #now that the raster is of smaller size, we can convert this to a projected coordinate system
@@ -152,7 +152,7 @@ elev_crop_UTM <- project(elev_crop, res=250, "EPSG:32735")
 
 #let's make sure it looks ok with our Hwange shapefile in UTM coordinates
 plot(elev_crop_UTM)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="black", col=NA, lwd=5, add=T)
 #ok, we are good!
 
 #we are going to write this raster to file so we can use it later
@@ -191,7 +191,7 @@ percveg[percveg > 100 | percveg<0] <- NA
 plot(percveg)
 
 #let's see what it looks like with Hwange NP
-plot(Hwange, border="black",col=NA, lwd=2,add=T)
+plot(Hwange, border="black", col=NA, lwd=2, add=T)
 
 #let's see the spread in values for a subset of cells
 hist(percveg) #IGNORE WARNING
@@ -201,10 +201,10 @@ veg_crop <- crop(percveg, elev_crop_UTM)
 
 #let's see what it looks like now!
 plot(veg_crop)
-plot(Hwange, border="grey",col=NA,lwd=5,add=T)
+plot(Hwange, border="grey", col=NA, lwd=5, add=T)
 
 
-# ---- MAKING A RASTER STACK ----
+#### ---- MAKING A RASTER STACK ---- ####
 
 #what happens when we try to make a raster stack of vegetation and elevation?
 stack <- c(veg_crop, elev_crop_UTM)
@@ -224,7 +224,7 @@ stack <- c(veg_crop, elev_crop_match)
 #yay, it works now!
 
 
-# ---- USING RECLASSIFY ----
+#### ---- USING RECLASSIFY ---- ####
 
 #a quick aside: let's say that we'd like to have four categories for elevation rather than continuous values
 #for example, 800-900 meters = 8, 900-1000 meters = 9, etc.
@@ -242,11 +242,10 @@ elev_reclass <- classify(elev_crop_match, reclass_mat)
 
 #let's see what it looks like now!
 plot(elev_reclass)
-plot(Hwange, border="black",col=NA,lwd=5,add=T)
+plot(Hwange, border="black", col=NA, lwd=5, add=T)
 
 
-
-# ---- BUILDING DISTANCE LAYERS ----
+#### ---- BUILDING DISTANCE LAYERS ---- ####
 
 #let's move on to getting distances from roads and waterholes
 #first, let's crop roads to Hwange extent
@@ -266,7 +265,7 @@ distroad_raster <- distance(raster_extent, roads_hwange)
 
 #we're done! let's plot the output
 plot(distroad_raster)
-plot(roads_hwange, col="grey",lwd=2,add=T)
+plot(roads_hwange, col="grey", lwd=2, add=T)
 
 #now let's calculate distance from points using distance()
 #creating another empty raster
@@ -277,14 +276,13 @@ distwater_raster <- distance(raster_extent, waterholes)
 
 #plotting the output
 plot(distwater_raster)
-plot(waterholes, col="light blue",lwd=2,add=T)
+plot(waterholes, col="light blue", lwd=2, add=T)
 
 #let's write this to raster to we can use it later
 writeRaster(distwater_raster, "Part4_RasterTools_Outputs/Dist_Waterhole_Hwange.tif", overwrite=T)
 
 
-
-# ---- NEIGHBORHOOD STATISTICS ----
+#### ---- NEIGHBORHOOD STATISTICS ---- ####
 
 #quick foray into neighborhood statistics
 #let's take the mean elevation using a neighborhood of 15 x 15 cells 
@@ -306,8 +304,7 @@ names(stack) <- c("perc_veg", "elev", "dist_road", "dist_waterhole")
 stack
 
 
-
-# ---- USING EXTRACT ----
+#### ---- USING EXTRACT ---- ####
 
 #cool. now we will use extract to extract values for each of our 1000 random points
 #from each of our four raster layers
@@ -341,44 +338,22 @@ plot(stack_import)
 elev <- subset(stack_import,subset=2)
 plot(elev)
 
-
-
+##############################################################################################################################################################
 ######################## BONUS (if time allows): Short introduction to point pattern process and interpolation ###############################################
+##############################################################################################################################################################
 
 #we are going to do a quick look at spatial interpolation methods
 #let's go back to our waterholes and say we sampled the water and calculated parasite density and 
-#are now interested in predicting parasite density in unsampled locations
-waterholes_sf <- st_as_sf(waterholes) #let's convert this to an sf object
+#are now interested in predicting what parasite density might look like in unsampled locations
 
-#first let's simulate some data with a spatially autocorrelated structure
-#to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
-#we need to specify a model function, and in this case, we are using an Exponential function
-#using an exponential function means that the correlation between points diminishes gradually 
-#as the distance between them increases, approaching a "sill" or plateau 
+#we first need some data
+waterholes_df <- read.csv("Example_Zimbabwe/waterholes_parasite_data.shp") #read in our data as a csv file
 
-#you need to describe the shape of the function using the sill, range, and nugget parameters
-#sill: maximum variability between two points
-#range: the lag distance where the variogram levels off 
-#at the range, two points are not spatially correlated if separated by that distance or greater
-#nugget: this represents small scale variability or y-intercept
-vgm_model <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
+#next we need to convert our data frame to a spatial object
+#let's make this an sf object using st_as_sf() where we input the object, coordinates, and the crs of our data
+waterholes_sf <- st_as_sf(waterholes_df, coords = c("X","Y"), crs = 32735) 
 
-#next we need to create a gstat object and tell it a few different inputs to make our predictions
-#formula: this defines our dependent variable as a an intercept only model (as in, no covariate predictors)
-#locations: spatial data locations
-#since we are not conditioning our model on observed data, we need to tell the function that it is 
-#an unconditional simulation using dummy = TRUE and it is intercept only with beta = 1
-#model: our generated variogram model that describes the spatial autocorrelation between our points
-#nmax: set the number of nearest observations that should be used for our simulation
-sim_gstat <- gstat(formula = z ~ 1, locations = ~x + y, dummy = TRUE, beta = 1, model = vgm_model, nmax = 20)
-
-#we can then predict our new variable to our locations of watering holes
-sim_result <- predict(sim_gstat, newdata = waterholes_sf, nsim = 1)
-
-#we assign our simulated results to a new data column in our waterholes sf object
-waterholes_sf$para_den <- sim_result$sim1 #create new waterhole variable that reflects the parasite density at watering holes (para_den)
-
-#let's look at the spatial pattern
+#let's look at the spatial pattern of parasite density across our waterholes
 mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
 
 #we can spatially create an area of influence of our parasite density based on the spatial locations of our waterholes
@@ -389,13 +364,14 @@ mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on v
 tess  <- dirichlet(as.ppp(waterholes_sf)) %>% st_as_sfc() %>% st_as_sf()
 st_crs(tess) <- st_crs(waterholes_sf) #reassign our crs
 tess <- tess %>% st_join(waterholes_sf, fn=mean) %>% st_intersection(st_as_sf(Hwange)) #rejoin attributes and clip to Hwange NP
+
 #let's see what it looks like
 #IGNORE WARNING
 #what data type is the final output?
 mapview(tess, zcol = "para_den")
 
 #let's look at two more simple approaches to spatial interpolation
-#for these approachs, we need a uniform grid
+#for these approaches, we need a uniform grid
 #let's use our elevation raster but resample to 4km pixels to make a uniform grid across Hwange NP
 #we can use the aggregate in terra to create a new spatraster with a lower resolution
 elev_crop_4km <- aggregate(elev_crop_UTM, 16)
@@ -418,21 +394,33 @@ idw <- gstat::idw(para_den ~ 1, waterholes_sf, newdata=grid)
 #we also tell the function which field we want to use as our raster cell values (field = "var1.pred")
 para_den_idw <- rasterize(idw, elev_crop_4km, field = "var1.pred")
 para_den_idw <- mask(para_den_idw, Hwange)
-mapview(para_den_idw)
 
 #second approach: kriging
 #unlike the previous approaches that are deterministic (based on distances), kriging is probabilistic and relies on statistical properties of observations
 #quantifies spatial autocorrelation and accounts for spatial configuration to make predictions
 #first we need to fit a variogram to our sample data
-#we set the cutoff of the spatial separation distance between points to include in our estimates and the distance intervals (widths) to group data points
+#we set the cutoff of the spatial separation distance between points to include in our estimates and the distance intervals (widths) to group data pointsMore actions
 v <- variogram(para_den ~ 1, data = waterholes_sf, cutoff = 100000, width = 5000)
 plot(v)
 
-#we now need to fit a variogram model to our sample variogram using the same input parameters we used to simulate the data
+#we now need to fit a variogram model to our sample variogram
+#to do this we can use the vgm() function in gstat that will generate a variogram model based on a few input parameters
+#we need to specify a model function, and in this case, we are using an Exponential function
+#using an exponential function means that the correlation between points diminishes gradually 
+#as the distance between them increases, approaching a "sill" or plateau 
+
+#you need to describe the shape of the function using the sill, range, and nugget parameters
+#sill: maximum variability between two points
+#range: the lag distance where the variogram levels off 
+#at the range, two points are not spatially correlated if separated by that distance or greater
+#nugget: this represents small scale variability or y-intercept
+
 vinitial <- vgm(psill = 1, model = "Exp", range = 10000, nugget = 0.01)
 plot(v, vinitial, cutoff = 1000, cex = 1.5, lwd=2)
+
 #now we want to fit our variogram model to our observed/sample variogram 
 fv <- fit.variogram(object = v, model = vinitial)
+
 #we use the same function again to create a gstat object with our data and fitted variogram model
 k <- gstat(formula = para_den ~ 1, data = waterholes_sf, model = fv)
 
@@ -443,6 +431,7 @@ kpred <- predict(k, grid)
 #we also tell the function that we want our prediction and variance field as our raster cell values
 para_den_krig <- rasterize(vect(kpred), elev_crop_4km, field = c("var1.pred", "var1.var"))
 para_den_krig <- mask(para_den_krig, Hwange)
+
 #take a quick look at the object that is returned
 para_den_krig
 

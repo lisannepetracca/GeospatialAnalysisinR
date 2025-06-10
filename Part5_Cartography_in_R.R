@@ -99,7 +99,6 @@ ggplot() +
   coord_sf()
 
 #if we want to save this as a .jpg, let's use ggsave()
-#if it asks if you want to create a new directory, type "1" for yes!
 ggsave("Part5_Cartography_Outputs/Hwange_waterholes.jpg", height=4, width=6, units = "in", dpi=300)
 
 #ok, so that's great for plotting a single shapefile

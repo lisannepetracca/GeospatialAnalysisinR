@@ -34,7 +34,7 @@ pts <-  vect(data,geom = c("long", "lat"), crs = coord_ref)
 pts
 plot(pts)
 
-# ---- CREATE A spatVector OBJECT WITH DATA ----
+# ---- CREATE A SpatVector OBJECT WITH DATA ----
 
 # Create attributes corresponding to the rows from data 
 # (alternatively you would pull from your database/csv etc.)

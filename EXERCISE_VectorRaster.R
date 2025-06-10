@@ -25,6 +25,8 @@ area_m2 <- expanse(Hwange)
 (area_km2 <- expanse(Hwange,"km"))
 
 #let's generate 100 random pts within the park
+#let's set a seed first
+set.seed(181)
 random_points <- spatSample(Hwange, size=100, "random")
 
 #read in elevation & check out CRS
@@ -57,6 +59,8 @@ names(stack) <- c("elevation", "distance to waterhole")
 plot(stack)
 
 #create a buffer around each point to extract
+#and let's set a seed again
+set.seed(181)
 random_pts_buf<-buffer(random_points,1000)
 
 #let's extract mean values for elevation and distance to waterhole for these buffers
@@ -66,4 +70,4 @@ random_pts_buf<-buffer(random_points,1000)
 raster_values <- terra::extract(stack, random_pts_buf, fun=mean)
 
 #write these values to a .csv
-write.csv(raster_values, "elev_distwater_hwange.csv")
+write.csv(raster_values, "Part4_RasterTools_Outputs/exercise_elev_distwater_hwange.csv")

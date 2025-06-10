@@ -2,7 +2,6 @@
 
 #set your working directory
 setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
-setwd("E:/OneDrive - Texas A&M University - Kingsville/Presentations/Geospatial_Analysis_in_R")
 
 #get the working directory and save as an object wd to access later
 wd<-getwd()

@@ -9,7 +9,7 @@ library(terra); library(tidyterra); library(ggplot2); library(viridis)
 library(ggspatial); library(rgbif); library(ggmap); library(move2)
 library(adehabitatHR); library(FedData); library(raster); library(mapview)
 library(sf); library(landscapemetrics); library(tidyverse); library(rnaturalearth)
-library(hexbin); library(rnaturalearthdata); library(keyring); library(geodata)
+library(hexbin); library(rnaturalearthdata); library(keyring); library(geodata); library(httr)
 
 # ---- USING LOOPS ----
 
@@ -75,7 +75,7 @@ for (dir in source) {
 files<-c(
   "https://tpwd.texas.gov/gis/resources/wildlife-management-areas.zip",
   "https://www2.census.gov/geo/tiger/TIGER2019/PRISECROADS/tl_2019_48_prisecroads.zip",
-  "https://www.depts.ttu.edu/geospatial/center/Data/TxStateLayers/Tx_Boundaries/Tx_Bndry_General_TIGER5m.zip")
+  "https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_state_20m.zip")
 
 #write a loop to batch download URLS
 #this might take a few minutes to run
@@ -98,12 +98,18 @@ paste(wd,"/",source[i],sep="") #see where we are storing it
 #read in TX WMAs, roads shapefiles, & elevation raster
 TX_WMA<-vect("TX_WMAs/WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
 roads<-vect("roads/tl_2019_48_prisecroads.shp")
-state_bound<-vect("state/Tx_Bndry_General_TIGER5m.shp")
+state_bound<-vect("state/cb_2025_us_state_20m.shp")
 
 #Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")
 #roads<-vect("Example_TX/tl_2019_48_prisecroads.shp")
-#state_bound<-vect("Example_TX/Tx_Bndry_General_TIGER5m.shp")
+#state_bound<-vect("Example_TX/cb_2025_us_state_20m.shp")
+
+#The State Boundary has all the states, so let's go ahead and just take Texas
+state_bound <- state_bound[3,]#Texas is the third row in the layer
+
+
+
 
 # ---- WORKING WITH WORLDCLIM CLIMATE DATA ----
 
@@ -213,6 +219,13 @@ for (i in 1:length(unique(TX_WMA$LoName))){
   dev.off()
   if (i==7)break## add this because we don't really need to go thru and map all 84
 }
+
+
+#If you are getting an error, it may mean there is some instability in the connection to the site.
+#This may be improved by forcing an older httr version to act as the "interface" with nlcd
+# Force HTTP/1.1 globally
+#httr::set_config(httr::config(http_version = 0)) 
+
 
 
 

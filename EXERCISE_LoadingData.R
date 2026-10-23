@@ -11,6 +11,10 @@ plot(ras)
 ext <- ext(ras)
 ext
 
+#Assign crs
+crs(ras) <- "EPSG:5358"
+
+
 #create x coordinates
 x <- seq(ext[1], ext[2], length.out = 25)
 

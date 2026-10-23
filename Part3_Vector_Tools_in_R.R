@@ -32,7 +32,11 @@ PA_tibble <- PAs %>% as_tibble() %>% tidyterra::select(1,2) %>% mutate_if(is.cha
 PAs[,1:2] <- PA_tibble
 
 #let's look at it interactively
+#Note your version may default to a basemap that requires an API key, you can simply switch to one of the default ESRI basemaps
 mapview(PAs)
+
+#Alternatively, try specifying the map type as Esri.WorldImagery
+#mapview(PAs, map.types = Esri.WorldImagery)
 
 #let's see what the columns of the attribute table are
 names(PAs)
@@ -299,7 +303,7 @@ ggplot() +
   geom_spatvector(data=cam_convexhull, fill=NA, color = "blue", size=2)+
   geom_spatvector(data=cam_500m_buffer, fill="red", color = "black")+
   geom_spatvector(data = camlocs_vec) +
-  coord_sf(datum=crs("EPSG:32616"), xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
+  coord_sf(xlim=c(extent[1], extent[2]), ylim=c(extent[3], extent[4]))+
   ggtitle("Map of Camera Trap Locations")
 
 #if we want a map with meters rather than lat/long along the two axes, add datum=st_crs(xxxx) argument

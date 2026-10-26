@@ -124,13 +124,13 @@ raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", re
 raster_temp
 
 
-#If unable to download, read in already cropped data and skip to line 133
+#If unable to download OR have issues masking in next secction, read in already cropped data
 #mask.temp <- rast("Example_WorldClim/mask_worldclimdata.tiff")
 
 #since our temperature raster is a big file what if we just crop it to the extent of our
 #WMA layer, and use only the raster layer representing June (i.e month 6)
 
-mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING
+mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING, if R crashes, read in file from Example_WorldClim and move to next line
 plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
 plot(roads, add=T,col="black")
 plot(TX_WMA, add=T, border=NA, col="orange") 
@@ -242,7 +242,8 @@ for (i in 1:length(unique(TX_WMA$LoName))){
 key <- name_backbone(name = 'Canidae', rank='family')$usageKey
 
 #run search and download 2000 records with coordinates -->
-###Download takes a moment so skip to line 229 if uploading csv
+###Download takes a moment so read in following line if uploading csv or download doesn't work
+#canid_data<-read.csv("Example_Canidae/Canidae_occ.csv") #OR JUST READ IN CSV, move to "look at data"
 
 Canidae<-occ_search(taxonKey=key,limit=2000,hasCoordinate = TRUE) #this takes a bit of time
 
@@ -258,7 +259,7 @@ write.csv(Canidae$data,"Part6_OnlineDataSources_Outputs/Canidae_occ.csv")
 #data is in tibble which is a modified data frame- lets change it to data frame to be consistent and store it in candat
 canid_data <-data.frame(Canidae$data)
 
-#canid_data<-read.csv("Example_Canidae/Canidae_occ.csv") #OR JUST READ IN CSV
+
 
 #look at data
 summary(canid_data)
@@ -415,14 +416,19 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 # ---- USING MOVEMENT DATA FROM MOVEBANK ----
 
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
-#through the move2 package. We will grab fisher data from NY. We can use the data
-#study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 442 AND 443
+#through the move2 package. We will grab fisher data from NY. 
+
+#Note this requires a movebank credentials, if you do not have them read in the data from the two lines directly below, and skip to the "na.omit" line
+#fisher<-vect("Example_fisher/fisherdata.shp")
+#fisher$individual_local_identifier<-as.factor(fisher$individual)
+
+#We can use the data study ID to directly download open access data using the movebank_download_study() function:
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM (note if you have used movebank before, the line below may work without inputting credentials)
 s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
 #'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf' #into the previous line- 
-#'let's do that
+#'let's do that (again, note this may not be required, if so skip to converting to dataframe)
 s <- movebank_download_study(6925808, 'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf')
 
 #this should take less that 20 or so seconds with a fast connection
@@ -437,10 +443,6 @@ head(fisher)
 #save to .shp
 writeVector(fisher,"fisherdata.shp")
 
-#read in shapefile instead of downloading; read next 2 lines
-
-#fisher<-vect("Example_fisher/fisherdata.shp")
-#fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher <- na.omit(fisher,geom=T)

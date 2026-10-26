@@ -15,7 +15,6 @@ library(tidyverse)
 library(viridis)
 library(mapview)
 
-
 # ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
 
 #in this example, we will explore protected areas in Honduras and subset by name and size
@@ -27,21 +26,17 @@ PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 head(PAs)
 
 #let's fix wonky characters real quick
-PA_tibble <- PAs %>% as_tibble() %>% tidyterra::select(1,2) %>% mutate_if(is.character, 
-            function(col) iconv(col, from="ISO-8859-1")) 
-PAs[,1:2] <- PA_tibble
+#this is an unusual issue; is because the shapefile has columns in Spanish
+PAs <- PAs %>% 
+  mutate(across(c(NOMBRE, CATEGORIA), ~ parse_character(.x, locale = locale(encoding = "ISO-8859-1"))))
 
 #let's look at it interactively
-#Note your version may default to a basemap that requires an API key, you can simply switch to one of the default ESRI basemaps
-mapview(PAs)
-
-#Alternatively, try specifying the map type as Esri.WorldImagery
-#mapview(PAs, map.types = Esri.WorldImagery)
+mapview(PAs, map.types = "Esri.WorldImagery")
 
 #let's see what the columns of the attribute table are
 names(PAs)
 
-#alternatively, to see the top six rows of data (same as L. 27)
+#alternatively, to see the top six rows of data (same as L. 26)
 head(PAs)
 
 #getting the coordinate system
@@ -58,7 +53,7 @@ ggplot() +
   geom_spatvector(data = PAs, size = 0.5, color = "black", fill = "darkgreen") + 
   ggtitle("PAs in Honduras")
 
-#alternatively
+#alternatively, and more simply
 plot(PAs)
 
 #this line will display the first row in the attribute table
@@ -75,8 +70,8 @@ PAs$NOMBRE
 #to see unique values within a certain column, we can use "unique" argument
 unique(PAs$CATEGORIA)
 
-#now let's use bracketing to subset only those PAs that are national parks
-NationalParks <- PAs[PAs$CATEGORIA == "Parque Nacional",]
+#now let's use piping to filter only those PAs that are national parks
+NationalParks <- PAs %>% filter(CATEGORIA == "Parque Nacional")
 
 #how many PAs are NPs?
 nrow(NationalParks)
@@ -90,12 +85,14 @@ nrow(NationalParks)
 (PAs$area_km2 <- expanse(PAs, unit="km"))
 
 #if we want to save this super-cool geometry, we can do
-PAs$NOMBRE
-write.csv(PAs, "Part3_VectorTools_Outputs/Honduras_PA_areas.csv", row.names=F, fileEncoding = "ISO-8859-1") 
+#the fileEncoding step is to preserve the Spanish accents; normally not needed!
+write.csv(as.data.frame(PAs), "Part3_VectorTools_Outputs/Honduras_PA_areas.csv", row.names=F, 
+          fileEncoding = "ISO-8859-1") 
 
 #now, the question is: how do we subset to only those PAs that are >500 km2?
-#let's use subsetting with brackets again
-BigPAs <- PAs[PAs$area_km2 > 500,]
+#let's use "filter" again
+BigPAs <- PAs %>% filter(area_km2 > 500)
+
 #how many PAs are greater than 500 km2 in area?
 nrow(BigPAs)
 
@@ -118,10 +115,10 @@ countries$NAME
 #how many countries are there?
 nrow(countries)
 #let's grab honduras from this sf object
-honduras <- countries[countries$NAME == "Honduras",]
+honduras <- countries %>% filter(NAME == "Honduras")
 
 #the line to run if ne_download does not work
-# honduras <- vect("Example_Honduras/Honduras_Border.shp")
+#honduras <- vect("Example_Honduras/Honduras_Border.shp")
 
 #and let's plot!
 ggplot() + 
@@ -161,30 +158,39 @@ ggsave("Part3_VectorTools_Outputs/Honduras_PA_Size.jpg", height=4, width=6, unit
 honduras_roads <- vect("Example_Honduras/Honduras_Roads_1999_CCAD.shp")
 
 #let's see what these roads look like
-mapview(honduras_roads)
+mapview(honduras_roads, map.types = "Esri.WorldImagery")
 
 #let's use perim() to see how long these roads are
 honduras_roads$length <- perim(honduras_roads)
 head(honduras_roads)
 
 #let's see what happens if we try to intersect them
-PAs_road_isect <- PAs[honduras_roads,]
-head(PAs_road_isect)
+#this will produce a layer of roads that intersect PAs
+#the use of terra:: ensures that the intersect function is going to come from terra 
+#(and not some other package with a function with the same name)
+roads_in_PAs <- terra::intersect(honduras_roads, PAs)
+head(roads_in_PAs)
 
 #this actually works, even though they are in different coordinate systems
-#however, many times we will want to ensure that coordinate systems of objects are the same
+#check the coordinate systems below
+crs(PAs, describe=T)
+crs(honduras_roads, describe=T)
 
+#however, many times we will want to ensure that coordinate systems of objects are the same
 #these two lines do the same thing
-honduras_roads_UTM <- project(honduras_roads, "EPSG:32616")
-honduras_roads_UTM <- project(honduras_roads, PAs)
+honduras_roads_UTM <- project(honduras_roads, "EPSG:32616") #this is the EPSG code for WGS 1984 UTM Zone 16N
+honduras_roads_UTM <- project(honduras_roads, PAs) #this projects the roads to the same coord system as PAs
 
 #getting the coordinate system
-crs(honduras_roads_UTM, describe=T)
 crs(PAs, describe=T)
+crs(honduras_roads_UTM, describe=T)
 #yay, they match!
 
 #let's try that intersect again
-PAs_road_isect <- PAs[honduras_roads_UTM]
+roads_in_PAs <- terra::intersect(honduras_roads_UTM, PAs)
+#notice the warning message goes away!
+
+plot(roads_in_PAs)
 
 #let's see what we get
 #a note that ggplot2 does not require vector data to be in the 
@@ -192,12 +198,12 @@ PAs_road_isect <- PAs[honduras_roads_UTM]
 ggplot() + 
   #plot Honduras boundary in dark grey
   geom_spatvector(data = honduras, fill=NA, color="darkgrey",lwd=1)+
-  #plot PAs in dark green
-  geom_spatvector(data = PAs_road_isect, color= "darkgreen",lwd = 1) +
   #plot Honduras roads
-  geom_spatvector(data = honduras_roads_UTM, lwd = 0.75) +
+  geom_spatvector(data = PAs, lwd = 0.5, color="black", fill=NA) +
+  #plot PAs in dark green
+  geom_spatvector(data = roads_in_PAs, color= "red",lwd = 1) +
   #add title and subtitle
-  ggtitle("PAs that intersect roads in Honduras", subtitle = "Subtitle option if you want it!")
+  ggtitle("Roads that intersect PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
 #let's do one last thing with these PAs - create centroids and save them as .csv
 #centroids give us the central points of polygon features
@@ -213,8 +219,7 @@ ggplot() +
 
 #let's convert it to a data frame and then save as .csv
 #the geom="XY" is important because it preserves the X and Y coordinates
-PA_centroids_df <- as.data.frame(PA_centroids, geom="XY")
-write.csv(PA_centroids_df, "Part3_VectorTools_Outputs/PA_centroids.csv", fileEncoding = "ISO-8859-1", row.names=F)
+write.csv(as.data.frame(PA_centroids, geom="XY"), "Part3_VectorTools_Outputs/PA_centroids.csv", fileEncoding = "ISO-8859-1", row.names=F)
 
 
 
@@ -244,7 +249,7 @@ camlocs_vec <- vect(camlocs, geom=c("x", "y"), crs="EPSG:32616")
 crs(camlocs_vec, describe=T)
 
 #let's see where these camera traps are
-mapview(camlocs_vec)
+mapview(camlocs_vec, map.types = "Esri.WorldImagery")
 
 #now let's save this to a .shp if we want to use it in ArcMap 
 writeVector(camlocs_vec,
@@ -361,7 +366,7 @@ PAs$NOMBRE
 PicoBonito <- PAs %>% filter(NOMBRE == "Pico Bonito-Zona Nucleo")
 
 #let's see where Pico Bonito is
-mapview (PicoBonito)
+mapview (PicoBonito, map.types = "Esri.WorldImagery")
 
 #let's create 100 random points within the PA for vegetation sampling
 #and let's set a random seed so everyone in the workshop will have points in the same place
@@ -427,7 +432,7 @@ dim(pico_16km2_grid_isect)
 
 #let's try again, supplying a vector such that it knows to sample 2 points
 #in each of the 53 polygons 
-random_points <- spatSample (pico_16km2_grid_isect, size=rep(2,53), method="random")
+random_points <- spatSample (pico_16km2_grid_isect, size=rep(2,nrow(pico_16km2_grid_isect)), method="random")
 
 ggplot() +
   geom_spatvector(data=pico_16km2_grid_isect, fill=NA, color = "darkblue", size=1)+
@@ -436,8 +441,7 @@ ggplot() +
   ggtitle("Two Random Pts Per Grid Cell in Pico Bonito NP")
 
 #let's save these points to a .csv
-random_points_df <- as.data.frame(random_points, geom="XY") #remember, geom=XY retains the coordinates
-write.csv(random_points_df, "Part3_VectorTools_Outputs/RandomPoints_PicoBonito.csv", row.names=F)
+write.csv(as.data.frame(random_points, geom="XY"), "Part3_VectorTools_Outputs/RandomPoints_PicoBonito.csv", row.names=F)
 
 #check it!
 head(read.csv("Part3_VectorTools_Outputs/RandomPoints_PicoBonito.csv"))

@@ -37,7 +37,7 @@ for (i in x){
 #Troubleshooting loops
 #give the loop a starting point
 i=1
-#for (i in x){ #remove the for statment
+#for (i in x){ #remove the for statement
 
 if(i=="b"){ #run individual lines of code to check for errors
   print("Yay!") 
@@ -122,8 +122,13 @@ state_bound <- state_bound[3,]#Texas is the third row in the layer
 raster_temp <- worldclim_country(country = "USA", path = wd, version = "2.1", res = 10, var = "tavg")
 
 raster_temp
+
+
+#If unable to download, read in already cropped data and skip to line 133
+#mask.temp <- rast("Example_WorldClim/mask_worldclimdata.tiff")
+
 #since our temperature raster is a big file what if we just crop it to the extent of our
-#WMA layer, and use only the raster layer representing June
+#WMA layer, and use only the raster layer representing June (i.e month 6)
 
 mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING
 plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
@@ -412,7 +417,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 437 AND 438
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 442 AND 443
 s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -434,8 +439,8 @@ writeVector(fisher,"fisherdata.shp")
 
 #read in shapefile instead of downloading; read next 2 lines
 
-fisher<-vect("Example_fisher/fisherdata.shp")
-fisher$individual_local_identifier<-as.factor(fisher$individual)
+#fisher<-vect("Example_fisher/fisherdata.shp")
+#fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher <- na.omit(fisher,geom=T)

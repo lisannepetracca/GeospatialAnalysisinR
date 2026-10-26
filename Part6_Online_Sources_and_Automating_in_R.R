@@ -1,7 +1,7 @@
 # ---- PART 4: ONLINE DATA SOURCES AND AUTOMATING ----
 
 #set your working directory
-setwd("C:/PASTE YOUR WORKING DIRECTORY HERE")
+setwd("SET WORKING DIRECTORY")
 
 #get the working directory and save as an object wd to access later
 wd<-getwd()
@@ -412,7 +412,7 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #Neat, okay lets try GPS movement data from movebank, by accessing the movebank API 
 #through the move2 package. We will grab fisher data from NY. We can use the data
 #study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 425 AND 426
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM; OTHERWISE SKIP AND UNCOMMENT LINE 437 AND 438
 s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
@@ -434,8 +434,8 @@ writeVector(fisher,"fisherdata.shp")
 
 #read in shapefile instead of downloading; read next 2 lines
 
-# fisher<-vect("Example_Fisher/fisherdata.shp")
-# fisher$individual_local_identifier<-as.factor(fisher$individual)
+fisher<-vect("Example_fisher/fisherdata.shp")
+fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
 fisher <- na.omit(fisher,geom=T)
@@ -446,9 +446,11 @@ table(fisher$individual_local_identifier)
 #look at the fisher data to make sure everything looks right
 plot(fisher, col=as.factor(fisher$individual_local_identifier))
 #let's take a quick look with mapview as well to see where this data is located
-mapview::mapview(fisher, zcol = "individual_local_identifier")
+mapview::mapview(fisher, zcol = "individual_local_identifier", map.types = "Esri.WorldImagery")
 
 #Excellent! Now we can move on to home ranges
+#But before we do...lets transform from lat/long to projected coordinates
+fisher <- project(fisher, "EPSG:32618")
 
 #Calculate home ranges for individuals
 #we are going to use minimum convex polygons to estimate the home range for each individual using the 
@@ -460,38 +462,24 @@ fisher_drop <- as((fisher[,"individual_local_identifier"]), "Spatial")
 
 #lets create a separate file for each individual
 #initialize vector to store names of home range shapefiles
-l <- rep(NA, length(unique(fisher_drop$individual_local_identifier)))
+mcps <- list()
 
 #loop through all unique individuals, calculate 95% Minimum convex polygon, rename shapefile by individual, save as shapefile,
-#plot the MCP and add the name of the shapefile to l
-for (i in 1:length(unique(fisher_drop$individual_local_identifier))) { #for 1: number of individuals
-  sub <- fisher_drop[fisher_drop$individual_local_identifier==unique(fisher_drop$individual_local_identifier)[i],]
-  #subset data for that individual
+#plot the MCP and add the name of the shapefile to mcps
+ids <- unique(fisher_drop$individual_local_identifier)
+for (id in ids) {
+  sub <- fisher_drop[fisher_drop$individual_local_identifier == id, ]
   sub$individual_local_identifier <- droplevels(sub$individual_local_identifier)
-  #drop other individul factor levels because it was throwing an error
-  mcp <- mcp(sub, percent=95)
-  #calculate 95% mcp - for that individual store in object mcp
-  assign(paste("MCP.", unique(fisher_drop$individual_local_identifier)[i], sep=""), mcp)
-  #rename mcp object as MCP.[individual id] using assign() - I'm a fan of this function
-  vect(get(paste("MCP.", unique(fisher_drop$individual_local_identifier)[i], sep="")),
-       paste("95p_MCP_", unique(fisher_drop$individual_local_identifier)[i], ".shp", sep=""), overwrite=TRUE)
-  #write a shapefile for the newly assigned MCP.[individual id] object, name it 95p_MCP_[individual Id]
-  #the get() function takes the text and gets the r object with that name
-  print(paste("MCP.",unique(fisher_drop$individual_local_identifier)[i], sep=""))
-  #print the MCP.[individual Id] to track progress
-  l[i] <- c(paste("MCP.", unique(fisher_drop$individual_local_identifier)[i], sep=""))
-  #store the MCP.[individual.Id] in vector to access later
-  
-  #and a simple plot for each to examine
-  plot(mcp, col=i)
-  plot(sub, add=T, pch=16)
+  mcps[[id]] <- mcp(sub, percent = 95)
+  writeVector(vect(mcps[[id]]), paste0("95p_MCP_", id, ".shp"), overwrite = TRUE)
+  plot(mcps[[id]], col = which(ids == id)); plot(sub, add = TRUE, pch = 16)
 }
 
 #so we did all that but if we just wanted the home ranges all in one shapefile we could do this
 fisher_mcp_all <- (mcp(fisher_drop, percent=95))
 
 #look at the home ranges
-mapview(fisher_mcp_all, zcol = "id", lwd = 3)
+mapview(fisher_mcp_all, zcol = "id", lwd = 3, map.types = "Esri.WorldImagery")
 
 #####GATHER COVARIATES
 #so now we have MCPs we need to get our covariates organized. We are using canopy and elevation
@@ -567,14 +555,12 @@ fisher_subset
 #Okay now we need to compare used to what was available to each individual in their home range
 #loop through each home range and sample as many points as there are points for that individual, 
 #add a column used with the label 0, bind to the used GPS points
-for (i in 1:length(l)){#for 1: number of home ranges
-  out <- spatSample(vect(get(l[i])), 
-            nrow(fisher[fisher$individual_local_identifier==unique(fisher_drop$individual_local_identifier)[i],]), method="random")
-  #sample X random points from home range i, where X=the number of used points for that individual
+for (id in names(mcps)) {
+  n   <- sum(fisher_drop$individual_local_identifier == id)
+  out <- spatSample(vect(mcps[[id]]), n, method = "random")
   out$used <- 0
-  #add a column to out that has the dummy variable used, but used =0 (i.e., unused)
+  out$individual_local_identifier <- id   # keep track of whose available points these are
   fisher_subset <- rbind(fisher_subset, out)
-  #bind the new available points to the used data and all previously sampled available points
 }
 
 #plot the used and available points
@@ -627,8 +613,8 @@ rsf.preds <- rasterize(pred.temp, aggregate(canopy, fact=6), field="pred")
 plot(rsf.preds)
 
 #add the home ranges to the map
-for (i in 1:length(l)){
-  plot((get(l[i])), lwd=4, add=T, border = "red")
+for (i in 1:length(mcps)){
+  plot(mcps[[i]], lwd=4, add=T, border = "red")
 }
 
 

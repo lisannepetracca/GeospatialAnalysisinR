@@ -23,7 +23,7 @@ Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
 plot(Hwange)
 
 #To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
-mapview(Hwange, map.types = "Esri.WorldImagery")
+mapview(Hwange, map.types = c("Esri.WorldImagery", "OpenStreetMap"))
 
 #let's create 1000 random points within the PA for to represent 'lion sightings' using spatSample()
 #size = number of points

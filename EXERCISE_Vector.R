@@ -10,17 +10,19 @@
 setwd("YOUR WORKING DIRECTORY HERE")
 
 library(terra)
+library(tidyverse)
 library(ggplot2)
 library(mapview)
+library(tidyterra)
 
 #read in PAs
 PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
 
 #select "La Tigra-nucleo" in Honduras
-Tigra <- PAs[PAs$NOMBRE=="La Tigra-nucleo",]
+Tigra <- PAs %>% filter(NOMBRE=="La Tigra-nucleo")
 
 #visualize it interactively
-mapview(Tigra)
+mapview(Tigra, map.types = "Esri.WorldImagery")
 
 #determine area 
 area_km2 <- expanse(Tigra, unit="km")
@@ -42,7 +44,7 @@ tigra_1km2_grid_isect
 #create stratified random points
 #let's set a seed so anyone following this code will have the same outputs
 set.seed(181)
-random_points <- spatSample (tigra_1km2_grid_isect, size=rep(2,105), method="random")
+random_points <- spatSample (tigra_1km2_grid_isect, size=rep(2,nrow(tigra_1km2_grid_isect)), method="random")
 
 #plot!
 ggplot() +

@@ -23,7 +23,7 @@ Hwange <- vect("Example_Zimbabwe/Hwange_NP.shp")
 plot(Hwange)
 
 #To orient everyone to where Hwange National Park is located, we can look at our spatial data using mapview::mapview()
-mapview(Hwange)
+mapview(Hwange, map.types = "Esri.WorldImagery")
 
 #let's create 1000 random points within the PA for to represent 'lion sightings' using spatSample()
 #size = number of points
@@ -33,16 +33,17 @@ Hwange_pts <- spatSample(Hwange, size=1000, method="random")
 
 #You can use mapview to show multiple spatial datasets! This is via using a '+' sign between mapview calls or using lists
 #We can also adjust our visualization by using a few different commands. Color = fill of color of object, alpha.regions = transparency, and lwd = thickness of the polygon outline
-mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10) +
-  mapview(Hwange_pts)
+mapview(Hwange, color = "darkgreen", alpha.regions = 0, lwd = 10, map.types = "Esri.WorldImagery") +
+  mapview(Hwange_pts, map.types = "Esri.WorldImagery")
 
 #what does this look like using ggplot?
 ggplot() +
   geom_spatvector(data = Hwange, color = "darkgreen", lwd=1.5) +
   geom_spatvector(data = Hwange_pts, color = "black", size=1)+
   ggtitle("1000 Random Points in Hwange NP")
+
 #depending on your version of R you may need to change the 'size' argument to 'lwd' for lines
-# note that it displays in lat/long by default, if you want to plot in UTM, have to use  coord_sf() function e.g coord_sf(datum=crs("EPSG:32616")
+#note that it displays in lat/long by default, if you want to plot in UTM, have to use  coord_sf() function e.g coord_sf(datum=crs("EPSG:32616")
 #now let's bring in our waterholes and roads 
 roads <- vect("Example_Zimbabwe/ZWE_roads.shp")
 waterholes <- vect("Example_Zimbabwe/waterholes.shp")
@@ -354,7 +355,7 @@ waterholes_df <- read.csv("Example_Zimbabwe/waterholes_parasite_data.csv") #read
 waterholes_sf <- st_as_sf(waterholes_df, coords = c("X","Y"), crs = 32735) 
 
 #let's look at the spatial pattern of parasite density across our waterholes
-mapview(waterholes_sf, zcol = "para_den") #zcol: adds a gradient fill based on values in a dataframe column
+mapview(waterholes_sf, zcol = "para_den", map.types = "Esri.WorldImagery") #zcol: adds a gradient fill based on values in a dataframe column
 
 #we can spatially create an area of influence of our parasite density based on the spatial locations of our waterholes
 #we use a function from spatstat r package and some object manipulation to get it into a usable format
@@ -368,7 +369,7 @@ tess <- tess %>% st_join(waterholes_sf, fn=mean) %>% st_intersection(st_as_sf(Hw
 #let's see what it looks like
 #IGNORE WARNING
 #what data type is the final output?
-mapview(tess, zcol = "para_den")
+mapview(tess, zcol = "para_den", map.types = "Esri.WorldImagery")
 
 #let's look at two more simple approaches to spatial interpolation
 #for these approaches, we need a uniform grid
@@ -380,7 +381,7 @@ xy <- terra::xyFromCell(elev_crop_4km, 1:ncell(elev_crop_4km)) #this will get th
 grid <- st_as_sf(as.data.frame(xy), coords = c("x", "y"), crs = crs(elev_crop_UTM)) #now create an empty sf object that represents our grid
 
 #take a look at our grid
-mapview(grid) #we now have a uniform grid across space that we can make predictions on
+mapview(grid, map.types = "Esri.WorldImagery") #we now have a uniform grid across space that we can make predictions on
 
 #first approach: inverse distance weighted (idw)
 #unsampled locations are estimated as the weighted average of values from the rest of locations (inversely proportional to distance)
@@ -394,7 +395,7 @@ idw <- gstat::idw(para_den ~ 1, waterholes_sf, newdata=grid)
 #we also tell the function which field we want to use as our raster cell values (field = "var1.pred")
 para_den_idw <- rasterize(idw, elev_crop_4km, field = "var1.pred")
 para_den_idw <- mask(para_den_idw, Hwange)
-mapview(para_den_idw)
+mapview(para_den_idw, map.types = "Esri.WorldImagery")
 
 #second approach: kriging
 #unlike the previous approaches that are deterministic (based on distances), kriging is probabilistic and relies on statistical properties of observations

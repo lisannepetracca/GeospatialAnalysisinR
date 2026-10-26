@@ -4,7 +4,7 @@ setwd("YOUR WORKING DIRECTORY HERE")
 #Example: setwd("C:/Users/KUJNH012/Documents/OcelotPhd/Rcode/GeospatialAnalysisinR")
 
 #load in a .tif image
-ras <- rast("TorresDelPaine.tif")
+ras <- rast("Exercise_1_LoadingData_Answers/TorresDelPaine.tif")
 plot(ras)
 
 #inspect ras to get the min and max x and y values
@@ -13,7 +13,6 @@ ext
 
 #Assign crs
 crs(ras) <- "EPSG:5358"
-
 
 #create x coordinates
 x <- seq(ext[1], ext[2], length.out = 25)

@@ -178,7 +178,7 @@ ggplot() +
 elev <- rast("Example_Zimbabwe/elev_Hwange.tif")
 
 #and let's see it quickly using the plot function
-mapview(elev)
+mapview(elev, map.types = "Esri.WorldImagery")
 
 #another way of displaying, in a non-interactive way
 plot(elev)
@@ -385,7 +385,7 @@ ggsave("Part5_Cartography_Outputs/Hwange_elevation_sidebyside.jpg", height=3, wi
 Zimbabwe <- vect("Example_Zimbabwe/Zimbabwe.shp")
 
 #let's look at it
-mapview(Zimbabwe)
+mapview(Zimbabwe, map.types = "Esri.WorldImagery")
 
 #we will call this map "inset"
 inset <- ggplot() +
@@ -402,7 +402,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.35, #you will have to play with these values a bit to get them right!
+            x = -0.35, #you will have to play with these values (or your plotting window) a bit to get them right!
             y = 0.06)
 
 #ok, we are nearly there! 
@@ -427,7 +427,7 @@ ggdraw() +
   draw_plot(map) +
   draw_plot(inset,
             height = 0.2,
-            x = -0.35, #you will have to play with these values a bit to get them right!
+            x = -0.35, #you will have to play with these values (or your plotting window) a bit to get them right!
             y = 0.06)
 
 #let's write this to a .jpg using ggsave()

@@ -1,4 +1,4 @@
-# ---- PART 3: VECTOR TOOLS IN R ----
+####---- PART 3: VECTOR TOOLS IN R ----####
 
 #let's set our working directory first
 #this working directory will link to where you have stored the workshop data on your PC
@@ -15,9 +15,13 @@ library(tidyverse)
 library(viridis)
 library(mapview)
 
-# ---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----
+
+
+####---- EXAMPLE: PROTECTED AREAS IN HONDURAS ----####
 
 #in this example, we will explore protected areas in Honduras and subset by name and size
+
+# ---- READ IN SHAPEFILE ----
 
 #read in the shapefile with vect()
 PAs <- vect("Example_Honduras/Honduras_Protected_Areas_2007.shp")
@@ -30,14 +34,18 @@ head(PAs)
 PAs <- PAs %>% 
   mutate(across(c(NOMBRE, CATEGORIA), ~ parse_character(.x, locale = locale(encoding = "ISO-8859-1"))))
 
+# ---- DISPLAY SPATIAL DATA WITH MAPVIEW ----
+
 #let's look at it interactively
 mapview(PAs, map.types = "Esri.WorldImagery")
 
 #let's see what the columns of the attribute table are
 names(PAs)
 
-#alternatively, to see the top six rows of data (same as L. 26)
+#alternatively, to see the top six rows of data 
 head(PAs)
+
+# ---- GET COORDINATE SYSTEM AND EXTENT ----
 
 #getting the coordinate system
 crs(PAs, describe=T)
@@ -47,6 +55,8 @@ ext(PAs)
 
 #how many features are in the object?
 nrow(PAs)
+
+# ---- USE OF GGPLOT ----
 
 #let's plot this SpatVector
 ggplot() + 
@@ -70,11 +80,15 @@ PAs$NOMBRE
 #to see unique values within a certain column, we can use "unique" argument
 unique(PAs$CATEGORIA)
 
+# ---- USE OF FILTER ----
+
 #now let's use piping to filter only those PAs that are national parks
 NationalParks <- PAs %>% filter(CATEGORIA == "Parque Nacional")
 
 #how many PAs are NPs?
 nrow(NationalParks)
+
+# ---- CALCULATE AREA ----
 
 #what if there is a numerical condition? such as, what PAs are >2000 km2?
 #for this we need to calculate geometry
@@ -83,6 +97,8 @@ nrow(NationalParks)
 
 #these are really big numbers though. to make it km2, try
 (PAs$area_km2 <- expanse(PAs, unit="km"))
+
+# ---- WRITE TO .CSV ----
 
 #if we want to save this super-cool geometry, we can do
 #the fileEncoding step is to preserve the Spanish accents; normally not needed!
@@ -101,6 +117,8 @@ ggplot() +
   geom_spatvector(data = BigPAs, aes(color = factor(NOMBRE)), linewidth = 1) +
   labs(color = "Name") + #this gives name to legend
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
+
+# ---- DOWNLOAD SPATIAL DATA FROM NATURALEARTH ----
 
 #now let's add an outline of honduras, shall we?
 #fun little preview of using online data to get boundaries of countries (can do US states too!)
@@ -130,6 +148,8 @@ ggplot() +
   labs(color = 'Name') +
   #add title and subtitle
   ggtitle("Large PAs in Honduras", subtitle = "Subtitle option if you want it!")
+
+# ---- WRITE TO .JPG WITH GGSAVE ----
 
 #let's write this to a .jpg using ggsave()
 ggsave("Part3_VectorTools_Outputs/Honduras_Large_PAs.jpg", height=4, width=6, units = "in", dpi=300)
@@ -164,6 +184,8 @@ mapview(honduras_roads, map.types = "Esri.WorldImagery")
 honduras_roads$length <- perim(honduras_roads)
 head(honduras_roads)
 
+# ---- USE OF INTERSECT ----
+
 #let's see what happens if we try to intersect them
 #this will produce a layer of roads that intersect PAs
 #the use of terra:: ensures that the intersect function is going to come from terra 
@@ -175,6 +197,8 @@ head(roads_in_PAs)
 #check the coordinate systems below
 crs(PAs, describe=T)
 crs(honduras_roads, describe=T)
+
+# ---- USE OF PROJECT ----
 
 #however, many times we will want to ensure that coordinate systems of objects are the same
 #these two lines do the same thing
@@ -205,6 +229,8 @@ ggplot() +
   #add title and subtitle
   ggtitle("Roads that intersect PAs in Honduras", subtitle = "Subtitle option if you want it!")
 
+# ---- CREATE CENTROIDS ----
+
 #let's do one last thing with these PAs - create centroids and save them as .csv
 #centroids give us the central points of polygon features
 PA_centroids <- centroids(PAs, inside=F)
@@ -223,13 +249,18 @@ write.csv(as.data.frame(PA_centroids, geom="XY"), "Part3_VectorTools_Outputs/PA_
 
 
 
-# ---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ----
+
+
+
+
+####---- EXAMPLE: CAMERA TRAP LOCATIONS IN HONDURAS ----####
 
 
 #In this example, we will create buffers of 500 m around a series of camera traps in 
 #Honduras, and then clip those buffers to Honduras land area
 #we may want buffers of 500-m if we are looking to calculate percent canopy cover within that radius
 
+# ---- READ IN .CSV WITH COORDINATES ----
 
 #let's import the csv of camera trap locations like any other .csv
 
@@ -251,6 +282,8 @@ crs(camlocs_vec, describe=T)
 #let's see where these camera traps are
 mapview(camlocs_vec, map.types = "Esri.WorldImagery")
 
+# ---- WRITE TO SHAPEFILE ----
+
 #now let's save this to a .shp if we want to use it in ArcMap 
 writeVector(camlocs_vec,
          "Part3_VectorTools_Outputs/camera_locations.shp", filetype = "ESRI Shapefile", overwrite=T) 
@@ -260,7 +293,11 @@ writeVector(camlocs_vec,
 #symmetrical = T so that we only get each pairwise distance once
 head(camlocs_vec)
 
+# ---- CREATE DISTANCE MATRIX ----
+
 dist_matrix <- distance(camlocs_vec, unit="km", pairs=T, symmetrical=T)
+
+# ---- CREATE BUFFER ----
 
 #then let's create a buffer of 500 m around the camera trap locations
 cam_500m_buffer <- buffer(camlocs_vec, width = 500)
@@ -271,6 +308,8 @@ ggplot() +
   geom_spatvector(data=cam_500m_buffer, fill="red", color = "black")+
   geom_spatvector(data = camlocs_vec) +
   ggtitle("Map of Camera Trap Locations")
+
+# ---- CREATE CONVEX HULL ----
 
 #creating a convex hull polygon around the camera trap locations
 cam_convexhull <- convHull(camlocs_vec) 
@@ -298,6 +337,8 @@ ggplot() +
   ggtitle("Map of Camera Trap Locations")
 
 #i am not happy with this map extent. how can we change it?
+
+# ---- TRIM MAP TO CERTAIN EXTENT ----
 
 #let's get the extent of that convex hull polygon first,
 extent <- ext(cam_convexhull)
@@ -333,6 +374,8 @@ honduras_detailed_UTM <- project(honduras_detailed, "EPSG:32616")
 #let's check to make sure the new polygon is in the correct projection
 crs(honduras_detailed_UTM, describe=T)
 
+# ---- USE OF CROP ----
+
 #yay! it worked! now we can proceed with cropping using crop()
 cam_convexhull_land <- crop(cam_convexhull, honduras_detailed_UTM)
 #quick plot to see if cropping worked
@@ -355,8 +398,12 @@ ggsave("Part3_VectorTools_Outputs/Honduras_Camera_Locations.jpg", height=4, widt
 
 
 
-####---- SAMPLING TOOLS ----####
 
+
+
+
+
+####---- SAMPLING TOOLS ----####
 
 
 #let's select the PA in honduras_detailed called "Pico Bonito - Zona Nucleo"
@@ -367,6 +414,8 @@ PicoBonito <- PAs %>% filter(NOMBRE == "Pico Bonito-Zona Nucleo")
 
 #let's see where Pico Bonito is
 mapview (PicoBonito, map.types = "Esri.WorldImagery")
+
+# ---- CREATE RANDOM POINTS ----
 
 #let's create 100 random points within the PA for vegetation sampling
 #and let's set a random seed so everyone in the workshop will have points in the same place
@@ -379,6 +428,8 @@ ggplot() +
   geom_spatvector(data=random_points, color = "black", size=2)+
   ggtitle("100 Random Points in Pico Bonito NP")
 
+# ---- CREATE REGULAR POINTS ----
+
 #let's try again with 100 regular points
 #let's set a seed again
 set.seed(181)
@@ -389,6 +440,8 @@ ggplot() +
   geom_spatvector(data = PicoBonito, color = "darkgreen", size=1.5) +
   geom_spatvector(data=regular_points, color = "black", size=2)+
   ggtitle("100 Regular Points in Pico Bonito NP")
+
+# ---- CREATE REGULAR GRID ----
 
 #then we will create a 16 km2 grid (4 km x 4 km) over the PA
 #first we need to create a template and add values
@@ -411,6 +464,8 @@ ggplot() +
   geom_spatvector(data = PicoBonito, color = "darkgreen", fill=NA, lwd=.75) +
   #use 'expression' and 'paste' to create superscripts, subscripts etc.
   labs(title=expression(paste("16 km" ^{2}," Grid in Pico Bonito NP")))
+
+# ---- CREATE RANDOM POINTS IN GRID ----
 
 #What if we want to put in two camera traps at random locations within each grid?
 

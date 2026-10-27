@@ -442,7 +442,7 @@ fisher <- vect(fisher, c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs")
 head(fisher)
 
 #save to .shp
-writeVector(fisher,"fisherdata.shp", overwrite=T)
+writeVector(fisher,"Part6_OnlineDataSources_Outputs/fisherdata.shp", overwrite=T)
 
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates
@@ -479,7 +479,7 @@ for (id in ids) {
   sub <- fisher_drop[fisher_drop$individual_local_identifier == id, ]
   sub$individual_local_identifier <- droplevels(sub$individual_local_identifier)
   mcps[[id]] <- mcp(sub, percent = 95)
-  writeVector(vect(mcps[[id]]), paste0("95p_MCP_", id, ".shp"), overwrite = TRUE)
+  writeVector(vect(mcps[[id]]), paste0("Part6_OnlineDataSources_Outputs/95p_MCP_", id, ".shp"), overwrite = TRUE)
   plot(mcps[[id]], col = which(ids == id)); plot(sub, add = TRUE, pch = 16)
 }
 

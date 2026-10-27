@@ -130,7 +130,7 @@ raster_temp
 #since our temperature raster is a big file what if we just crop it to the extent of our
 #WMA layer, and use only the raster layer representing June (i.e month 6)
 
-mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING, if R crashes, read in file from Example_WorldClim and move to next line
+mask.temp<- mask(raster_temp[[6]], state_bound) #IGNORE WARNING, if R crashes, read in file from Example_WorldClim a few lines above and move to next line
 plot(mask.temp, type = "continuous", xlim = c(-110, -90), ylim = c(25, 38))
 plot(roads, add=T,col="black")
 plot(TX_WMA, add=T, border=NA, col="orange") 
@@ -192,6 +192,7 @@ dev.off()
 #Only 83 more to go!
 #just kidding lets loop it
 
+#IF YOU GET AN ERROR ABOUT WEB COVERAGE SERVICE, COMMENT OUT L. 210 AND UNCOMMENT L. 213. TRY AGAIN!
 for (i in 1:length(unique(TX_WMA$LoName))){
   #lets set the extent for the i th  WMA
   sub<-TX_WMA[TX_WMA$LoName==unique(TX_WMA$LoName)[[i]],]
@@ -419,12 +420,12 @@ for (i in 1:length(unique(canid_data$species))) {  #running through 1: number of
 #through the move2 package. We will grab fisher data from NY. 
 
 #Note this requires a movebank credentials, if you do not have them read in the data from the two lines directly below, and skip to the "na.omit" line
-#fisher<-vect("Example_fisher/fisherdata.shp")
-#fisher$individual_local_identifier<-as.factor(fisher$individual)
+fisher <- vect("Example_fisher/fisherdata.shp")
+fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #We can use the data study ID to directly download open access data using the movebank_download_study() function:
-movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM (note if you have used movebank before, the line below may work without inputting credentials)
-s <- movebank_download_study(6925808)
+# movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM (note if you have used movebank before, the line below may work without inputting credentials)
+# s <- movebank_download_study(6925808)
 
 #you will get a note that you need to approve the license and copy 
 #'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf' #into the previous line- 
@@ -441,7 +442,7 @@ fisher <- vect(fisher, c("X", "Y"), crs = "+proj=longlat +datum=WGS84 +no_defs")
 head(fisher)
 
 #save to .shp
-writeVector(fisher,"fisherdata.shp")
+writeVector(fisher,"fisherdata.shp", overwrite=T)
 
 
 #Oof lots of NA coordinates that going to be problematic later -lets remove NA coordinates

@@ -61,9 +61,9 @@ if(i=="b"){ #run individual lines of code to check for errors
 
 #need to define names for each file to be downloaded to
 # Define directory names (relative or absolute paths)
-tx <- "TX_WMAs"
-rds <- "roads" #texas roads
-state <- "state"
+tx <- "Part6_OnlineDataSources_Outputs/TX_WMAs"
+rds <- "Part6_OnlineDataSources_Outputs/roads" #texas roads
+state <- "Part6_OnlineDataSources_Outputs/state"
 source <- c(tx, rds, state) #going to bind folder pathways into vector to reference later
 
 # Create directories if they don't exist

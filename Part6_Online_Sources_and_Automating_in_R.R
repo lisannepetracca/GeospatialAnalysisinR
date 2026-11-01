@@ -96,9 +96,9 @@ files[i] #check files at that iteration
 paste(wd,"/",source[i],sep="") #see where we are storing it
 
 #read in TX WMAs, roads shapefiles, & elevation raster
-TX_WMA<-vect("TX_WMAs/WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
-roads<-vect("roads/tl_2019_48_prisecroads.shp")
-state_bound<-vect("state/cb_2025_us_state_20m.shp")
+TX_WMA<-vect("Part6_OnlineDataSources_Outputs/TX_WMAs/WildlifeManagementAreas/WildlifeManagementAreas.shp")#this one is nested in another folder
+roads<-vect("Part6_OnlineDataSources_Outputs/roads/tl_2019_48_prisecroads.shp")
+state_bound<-vect("Part6_OnlineDataSources_Outputs/state/cb_2025_us_state_20m.shp")
 
 #Alternatively, read them in from file
 #TX_WMA<-vect("Example_TX/WildlifeManagementAreas/WildlifeManagementAreas.shp")

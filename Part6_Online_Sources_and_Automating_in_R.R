@@ -424,10 +424,9 @@ fisher <- vect("Example_fisher/fisherdata.shp")
 fisher$individual_local_identifier<-as.factor(fisher$individual)
 
 #We can use the data study ID to directly download open access data using the movebank_download_study() function:
-# movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM (note if you have used movebank before, the line below may work without inputting credentials)
-# s <- movebank_download_study(6925808)
+movebank_store_credentials(username="" , password ="") #INPUT CREDENTIALS IF YOU HAVE THEM (note if you have used movebank before, the line below may work without inputting credentials)
 
-#you will get a note that you need to approve the license and copy 
+#you need to approve the license and copy 
 #'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf' #into the previous line- 
 #'let's do that (again, note this may not be required, if so skip to converting to dataframe)
 s <- movebank_download_study(6925808, 'license-md5'='0cc38362d9a726efbc0347a0d8e65fcf')

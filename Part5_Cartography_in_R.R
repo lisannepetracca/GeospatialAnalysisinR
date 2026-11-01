@@ -1,7 +1,7 @@
 # ---- PART 5: CARTOGRAPHY ----
 
 #let's set our working directory first
-#setwd("C:/Users/lspetrac/Desktop/Geospatial_Analysis_in_R")
+#setwd("C:/Users/lisan/OneDrive - Texas A&M University - Kingsville/Geospatial_Analysis_in_R/Geospatial_Analysis_in_R")
 setwd("YOUR WORKING DIRECTORY HERE")
 
 #and let's load all the libraries we need
@@ -14,7 +14,6 @@ library(cowplot) #for insets
 library(tmap) #for interactive map
 library(sf) #to have vectors in interactive map
 library(mapview) #to see geospatial objects interactively
-
 
 # ---- LET'S HAVE SOME FUN WITH MAPPING! ----
 
@@ -130,9 +129,18 @@ ggplot() +
 #what's the solution?
 #we essentially need to create a legend that combines the roads and waterholes
 ggplot()+
-  geom_spatvector(data = HwangeNP, color = "darkgreen", fill="white", lwd=2) +
-  geom_spatvector(data = roads_Hwange, aes(color = factor(F_CODE_DES)), size = 1, linetype = "solid", show.legend = 'line') +
-  geom_spatvector(data = waterholes,   aes(color = factor(TYPE)), size = 3) +
+  geom_spatvector(data = HwangeNP, 
+                  color = "darkgreen", 
+                  fill="white", 
+                  lwd=2) +
+  geom_spatvector(data = roads_Hwange, 
+                  aes(color = factor(F_CODE_DES)), 
+                  size = 1, 
+                  linetype = "solid", 
+                  show.legend = 'line') +
+  geom_spatvector(data = waterholes,   
+                  aes(color = factor(TYPE)), 
+                  size = 3) +
   #below we are creating one scale that combines roads and waterhole type
   scale_color_manual("Legend", labels = c("road", "pan", "riverpool", "spring"),
                      values = c("Road" = "black", 
@@ -157,6 +165,57 @@ ggplot()+
 
 #let's write this to a .jpg using ggsave()
 ggsave("Part5_Cartography_Outputs/Hwange_waterholes_and_roads.jpg", height=4, width=6, units = "in", dpi=300)
+
+#what if we want to use a lot more code (lol) to create a 
+#subheading "Waterhole types" above type of waterhole?
+
+#set legend levels ("header_waterholes" is a placeholder for now)
+legend_levels <- c("road", "header_waterholes", "pan", "riverpool", "spring")
+
+#assign how layers will appear in the legend
+roads_Hwange$legend_id <- factor("road", levels = legend_levels)
+waterholes$legend_id   <- factor(as.character(waterholes$TYPE), levels = legend_levels)
+
+#plot
+ggplot() +
+  geom_spatvector(data = HwangeNP, 
+                  color = "darkgreen", 
+                  fill = "white", 
+                  linewidth = 2) +
+  geom_spatvector(
+    data = roads_Hwange, 
+    aes(color = legend_id), 
+    linewidth = 1, 
+    key_glyph = draw_key_path) + #this line forces roads to be drawn as a line rather than polygon in legend
+  geom_spatvector(
+    data = waterholes, 
+    aes(color = legend_id), 
+    size = 3) +
+  scale_color_manual(
+    name   = "Legend",
+    breaks = legend_levels,
+    labels = c("road", "Waterhole types", "  pan", "  riverpool", "  spring"),
+    values = c(
+      "road"              = "black",
+      "header_waterholes" = "transparent",
+      "pan"               = "purple",
+      "riverpool"         = "orange",
+      "spring"            = "deepskyblue3"
+    ),
+    drop = FALSE  #keeps header_waterholes in the 5-row legend table
+  ) +
+  theme_bw() +
+  theme(
+    legend.key        = element_rect(fill = NA),
+    legend.background = element_rect(fill = NA),
+    legend.text       = element_text(size = 12),
+    legend.title      = element_text(size = 12, face = "bold")) +
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        linetype = c(1, 0, 0, 0, 0),
+        shape    = c(NA, NA, 16, 16, 16),
+        size     = c(1, 0, 3, 3, 3))))
 
 #what if we want new shapes?
 #let's make the waterholes diamonds instead of circles
